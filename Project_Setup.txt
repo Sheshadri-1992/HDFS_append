@@ -1,0 +1,44 @@
+
+** Pre Requisite **
+
+git init
+git add .
+git commit -m "1st commit"
+git remote add origin https://github.com/Sheshadri-1992/Testing.git
+git remote -v
+git push origin master
+
+
+1. Take checkout of whole project
+   git clone https://github.com/Sheshadri-1992/ProjectX.git
+
+2. Push your code
+   git add .
+   git commit -m "Shweta Commit"
+   git push origin master
+
+
+Username : Sheshadri-1992
+Password : ProjectMayhem123
+
+3. Check uncommited files
+   git status
+
+4. Commit particular file
+   git commit -m 'my notes' -- path/to/my/file.ext
+
+5. logs
+   git log
+
+6. Code update
+   git pull origin master
+
+7. Save credentials
+   git config --global credential.helper 'cache --timeout=3600'
+
+8. Unset/Set proxy
+	this is for unsetting
+   git config --global --unset http.proxy 
+	this is for setting
+   git config --global http.proxy proxy.iiit.ac.i
+
