@@ -51,6 +51,8 @@ public class NameNodeDriver implements INameNode
 	
 	public static void main(String[] args) {
 
+		System.out.println("Hello");
+		
 		System.setProperty("java.security.policy","./security.policy");
 		//set the security manager
         if (System.getSecurityManager() == null) {
