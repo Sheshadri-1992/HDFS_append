@@ -249,7 +249,7 @@ public class ClientDriver {
 					readBlockReqObj.setBlockNumber(blockNumber);
 					
 					/**Read block request call **/
-											
+					
 					responseArray = dataStub.readBlock(readBlockReqObj.build().toByteArray());
 					ReadBlockResponse readBlockResObj = ReadBlockResponse.parseFrom(responseArray);
 					
