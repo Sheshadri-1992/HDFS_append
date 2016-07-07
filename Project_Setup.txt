@@ -19,7 +19,7 @@ git push origin master
 
 
 Username : Sheshadri-1992
-Password : ProjectMayhem123
+Password : IT DOESN'T MATTER
 
 3. Check uncommited files
    git status
