@@ -50,7 +50,7 @@ public class DataNodeDriver implements IDataNode {
 	public static int id;
 	public static int BINDING_PORT;
 	
-	public static List<Integer> dataBlocks;
+	public static List<String> dataBlocks;
 	
 	/**Interface methods start here **/
 	public byte[] readBlock(byte[] inp) throws RemoteException {
@@ -70,7 +70,7 @@ public class DataNodeDriver implements IDataNode {
 		ReadBlockRequest readBlkReqObj;
 		try {
 			readBlkReqObj = ReadBlockRequest.parseFrom(inp);
-			int blockNumber = readBlkReqObj.getBlockNumber();
+			String blockNumber = readBlkReqObj.getBlockNumber();
 			
 
 			
@@ -120,7 +120,7 @@ public class DataNodeDriver implements IDataNode {
 			/**Block locations object **/
 			final BlockLocations blockLocObj = writeBlockRequestObj.getBlockInfo();
 			
-			final int blockNumber = blockLocObj.getBlockNumber();
+			final String blockNumber = blockLocObj.getBlockNumber();
 			
 			
 			String str = new String(receivedByteArray, StandardCharsets.UTF_8);
@@ -180,7 +180,7 @@ public class DataNodeDriver implements IDataNode {
 	 * @throws RemoteException **/
 	
 	
-	public static void sendToNextDataNode(BlockLocations blockLocObj, int blockNumber, WriteBlockRequest writeBlockRequestObj) throws RemoteException
+	public static void sendToNextDataNode(BlockLocations blockLocObj, String blockNumber, WriteBlockRequest writeBlockRequestObj) throws RemoteException
 	{
 		List<DataNodeLocation> locs = blockLocObj.getLocationsList();
 		BlockLocations.Builder blkLocations = BlockLocations.newBuilder();
@@ -436,9 +436,9 @@ public class DataNodeDriver implements IDataNode {
 		
 	}
 	
-	public static List<Integer> readBlocksFromFile()
+	public static List<String> readBlocksFromFile()
 	{
-		ArrayList<Integer> blocks = new ArrayList<Integer>();
+		ArrayList<String> blocks = new ArrayList<String>();
 		
 		BufferedReader buff;
 		try {
@@ -449,7 +449,7 @@ public class DataNodeDriver implements IDataNode {
 			try {
 				while((line = buff.readLine())!=null)
 				{
-					blocks.add(Integer.parseInt(line));
+					blocks.add(line);
 				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -476,7 +476,7 @@ public class DataNodeDriver implements IDataNode {
 		return blocks;
 	}
 	
-	public static synchronized void insertBlock(Integer blockID)
+	public static synchronized void insertBlock(String blockID)
 	{
 		dataBlocks.add(blockID);
 		

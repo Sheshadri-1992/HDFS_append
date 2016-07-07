@@ -4,14 +4,16 @@ message OpenFileRequest {
   optional bool isAppend = 3; // true if file is opened for appending
 }
 
-message OpenFileResponse {
+message OpenFileResponse 
+{
   optional int32 status = 1; // result of the call
   optional int32 handle = 2; // file handle. Use this to close file on write
 // for read, the numbers for the various blocks. Not populated in write mode
-  repeated int32 blockNums = 3;  
+  repeated string blockNums = 3;    // will contain old_block number : 12.1
   optional int32 size = 4; // only populated for append . Returns size of last block
-
+  optional string newBlockNum = 5; //populated for append . ex: 12.3 
 }
+
 
 message CloseFileRequest {
   optional int32 handle = 1; // obtained from OpenFile
@@ -23,11 +25,13 @@ message CloseFileResponse {
   optional int32 status = 1;
 }
 
-message WriteBlockRequest {
-  optional BlockLocations blockInfo = 1;
+message WriteBlockRequest 
+{
+  optional BlockLocations blockInfo = 1;   // this contains old block only
   repeated bytes data = 2;
   optional bool isAppend = 3; // when isAppend is true file will be written in append mode
   optional int32 count=4; // to return count of datanodes that were able to write successfully.
+  optional string newBlockNum = 5; //populated for append . ex: 12.3
 }
 
 message WriteBlockResponse {
@@ -41,12 +45,12 @@ message DataNodeLocation {
 }
 
 message BlockLocations {
-  optional int32 blockNumber = 1;
+  optional string blockNumber = 1;
   repeated DataNodeLocation locations = 2;
 }
 
 message BlockLocationRequest {
-  repeated int32 blockNums = 1;
+  repeated string blockNums = 1;
 }
 
 message BlockLocationResponse {
@@ -73,7 +77,7 @@ message ListFilesResponse {
 }
 
 message ReadBlockRequest {
-  optional int32 blockNumber = 1;
+  optional string blockNumber = 1;
 }
 
 message ReadBlockResponse {
@@ -84,12 +88,12 @@ message ReadBlockResponse {
 message BlockReportRequest {
   optional int32 id = 1; // identity of the DN. All communication to the NN uses the same id
   optional DataNodeLocation location = 2;
-  repeated int32 blockNumbers = 3;
+  repeated string blockNumbers = 3;
 }
 
 message BlockReportResponse {
   repeated int32 status = 1;
-  repeated int32 deleteBlocks =2 ; //list of blocks that need to be deleted.
+  repeated string deleteBlocks =2 ; //list of blocks that need to be deleted.
   optional DataNodeLocation location = 3; // This is to retrieve blocks from other data nodes 
 
 }

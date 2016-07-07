@@ -20,10 +20,10 @@ public class GetFile {
 		// TODO Auto-generated constructor stub
 	}
 	
-	Integer[] getFileDetails(String fileName)
+	String[] getFileDetails(String fileName)
 	{
 		BufferedReader buff;
-		Integer [] blk_int =null;
+		String [] blk_int =null;
 		
 		try {
 			buff = new BufferedReader(new FileReader(Constants.NAME_NODE_CONF));
@@ -40,10 +40,10 @@ public class GetFile {
 			{
 				String token[] = line.split(":");
 				String blocks[] = token[1].split(",");
-				blk_int = new Integer[blocks.length];
+				blk_int = new String[blocks.length];
 				for(int i=0;i<blocks.length;i++)
 				{
-					blk_int[i] = Integer.parseInt(blocks[i]);
+					blk_int[i] = blocks[i];
 				}
 				
 			}
@@ -59,12 +59,12 @@ public class GetFile {
 		
 	}
 
-	public List<BlockLocations> getBlockLocations(List<Integer> blocks, HashMap<Integer, List<DataNodeLocation>> blockLocations) {
+	public List<BlockLocations> getBlockLocations(List<String> blocks, HashMap<String, List<DataNodeLocation>> blockLocations) {
 		// TODO Auto-generated method stub
 		
 		List<BlockLocations> resLocations = new ArrayList<>();
 		
-		for(Integer block : blocks)
+		for(String block : blocks)
 		{
 			BlockLocations.Builder blk = BlockLocations.newBuilder();
 			blk.setBlockNumber(block);

@@ -43,7 +43,7 @@ public class NameNodeDriver implements INameNode
 {
 
 	public static HashMap<Integer,DataNodeLocation>  dataNodes;   //data node id, location
-	public static HashMap<Integer,List<DataNodeLocation>> blockLocations;
+	public static HashMap<String,List<DataNodeLocation>> blockLocations;
 	public static HashMap<Integer,Long>  heartBeatDataNodes; 
 	public static PutFile putFile ;
 	public static GetFile getFile;
@@ -135,14 +135,14 @@ public class NameNodeDriver implements INameNode
 				
 			}else       // type = true then read i.e get
 			{
-				Integer[] blocks = getFile.getFileDetails(fileName);
+				String[] blocks = getFile.getFileDetails(fileName);
 				if(blocks==null)
 				{
 					res.setStatus(Constants.STATUS_NOT_FOUND);
 				}else
 				{
 					res.setStatus(Constants.STATUS_SUCCESS);
-					Iterable<Integer> iterable = Arrays.asList(blocks);
+					Iterable<String> iterable = Arrays.asList(blocks);
 					res.addAllBlockNums(iterable);
 				}
 				
@@ -204,7 +204,7 @@ public class NameNodeDriver implements INameNode
 		try {
 			BlockLocationRequest req = BlockLocationRequest.parseFrom(inp);
 			
-			List<Integer> blocks = req.getBlockNumsList();
+			List<String> blocks = req.getBlockNumsList();
 			
 			List<BlockLocations> locs  = getFile.getBlockLocations(blocks,blockLocations);
 			
@@ -255,7 +255,7 @@ public class NameNodeDriver implements INameNode
 //				System.out.println("Value is "+value);
 			}else
 			{
-				int [] randoms = getTwoRandoms(max); 
+				int [] randoms = getTwoRandoms(max); // get random nodes of all the number of active datanodes
 				
 				List<Integer> keys      = new ArrayList<Integer>(dataNodes.keySet());
 				Integer randomKey = keys.get( randoms[0]);
@@ -269,7 +269,7 @@ public class NameNodeDriver implements INameNode
 			
 	
 //			System.out.println("Num block "+numBlock);
-			blocks.setBlockNumber(numBlock);
+			blocks.setBlockNumber(numBlock+"");//this reads a 
 			res.setNewBlock(blocks);
 			
 			System.out.println("Response" + res);
@@ -330,7 +330,7 @@ public class NameNodeDriver implements INameNode
 			
 			for(int i=0;i<req.getBlockNumbersCount();i++)
 			{
-				int numBlock = req.getBlockNumbers(i);
+				String numBlock = req.getBlockNumbers(i);
 				if(!blockLocations.containsKey(numBlock))
 				{
 					

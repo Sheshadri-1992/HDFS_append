@@ -146,7 +146,7 @@ public class ClientDriver {
 				}
 				
 				//receives all the block numbers associated with a given file
-				List<Integer> blockNums = responseObj.getBlockNumsList();
+				List<String> blockNums = responseObj.getBlockNumsList();
 				BlockLocationRequest.Builder blockLocReqObj = BlockLocationRequest.newBuilder();
 				
 				/**Now, all blocks related to that file is present with us  
@@ -186,7 +186,7 @@ public class ClientDriver {
 				{
 					BlockLocations thisBlock = blockLocations.get(i);
 					
-					int blockNumber = thisBlock.getBlockNumber();					
+					String blockNumber = thisBlock.getBlockNumber();					
 					List<DataNodeLocation> dataNodes = thisBlock.getLocationsList();
 					
 					if(dataNodes==null || dataNodes.size()==0)
@@ -369,7 +369,7 @@ public class ClientDriver {
 						
 						blkLocation = assignResponseObj.getNewBlock();
 						
-						int blockNumber = blkLocation.getBlockNumber();
+						String blockNumber = blkLocation.getBlockNumber();
 						System.out.println("Block number retured is "+blockNumber);
 						
 						dataNodeLocations = blkLocation.getLocationsList();
