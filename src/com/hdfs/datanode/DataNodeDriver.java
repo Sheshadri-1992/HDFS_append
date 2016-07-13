@@ -43,6 +43,7 @@ import com.hdfs.miscl.Hdfs.HeartBeatResponse;
 import com.hdfs.miscl.Hdfs.ReadBlockRequest;
 import com.hdfs.miscl.Hdfs.ReadBlockResponse;
 import com.hdfs.miscl.Hdfs.WriteBlockRequest;
+import com.hdfs.miscl.Hdfs.WriteBlockResponse;
 import com.hdfs.namenode.INameNode;
 import com.hdfs.miscl.*;
 import java.io.*;
@@ -116,6 +117,8 @@ public class DataNodeDriver implements IDataNode {
 //		System.out.println("In Method write Block");
 		byte[] receivedByteArray;
 		
+		WriteBlockResponse.Builder writeBlockRes = WriteBlockResponse.newBuilder();
+		
 		try {
 			final WriteBlockRequest writeBlockRequestObj = WriteBlockRequest.parseFrom(inp);
 			/**Received Byte array **/
@@ -131,7 +134,18 @@ public class DataNodeDriver implements IDataNode {
 
 				createDuplicate(blockNumber,writeBlockRequestObj.getNewBlockNum(),str);
 				
-				return null;
+				int dataNodeCount = 1;
+				
+				if(blockLocObj.getLocationsCount() > 1)
+					dataNodeCount = sendToNextDataNodeAppend(blockLocObj, blockNumber, writeBlockRequestObj);
+				else
+					dataNodeCount = writeBlockRequestObj.getCount()+1;
+				
+				
+				writeBlockRes.setCount(dataNodeCount);
+				writeBlockRes.setStatus(Constants.STATUS_SUCCESS);
+				
+				return writeBlockRes.build().toByteArray();
 				
 			}else
 			{
@@ -165,7 +179,9 @@ public class DataNodeDriver implements IDataNode {
 			         }).start();
 				}
 				
-				return null;
+				writeBlockRes.setCount(0);
+				writeBlockRes.setStatus(Constants.STATUS_SUCCESS);		
+				return writeBlockRes.build().toByteArray();
 				
 			}
 			
@@ -204,6 +220,7 @@ public class DataNodeDriver implements IDataNode {
 			e.printStackTrace();
 		}
 		
+		dataBlocks.add(newBlockNum);
 	}
 
 
@@ -215,17 +232,22 @@ public class DataNodeDriver implements IDataNode {
 	
 	
 	
-	
-	public static void sendToNextDataNodeAppend(BlockLocations blockLocObj, String blockNumber, WriteBlockRequest writeBlockRequestObj) throws RemoteException
+	/* Returns count of datanodes that received append */
+	public static int sendToNextDataNodeAppend(BlockLocations blockLocObj, String blockNumber, WriteBlockRequest writeBlockRequestObj) throws RemoteException
 	{
 		List<DataNodeLocation> locs = blockLocObj.getLocationsList();
 		BlockLocations.Builder blkLocations = BlockLocations.newBuilder();
 		blkLocations.setBlockNumber(blockNumber);
 		
-		DataNodeLocation dataNode = locs.get(1);
+		//0 will be the current data node
 		
-		
-		blkLocations.addLocations(dataNode);
+		DataNodeLocation dataNode = locs.get(1); // this is the nexrt datanode in chain
+				
+		for(int i=1;i<locs.size();i++)
+		{
+				blkLocations.addLocations(locs.get(i));
+		}
+				
 		
 		Registry registry=LocateRegistry.getRegistry(dataNode.getIp(),dataNode.getPort());
 
@@ -234,17 +256,28 @@ public class DataNodeDriver implements IDataNode {
 			dataStub = (IDataNode) registry.lookup(Constants.DATA_NODE_ID);
 			
 			WriteBlockRequest.Builder req = WriteBlockRequest.newBuilder();
-			
+			req.setNewBlockNum(writeBlockRequestObj.getNewBlockNum());
 			req.addData(writeBlockRequestObj.getData(0));
 			req.setBlockInfo(blkLocations);
+			req.setIsAppend(true);
+			req.setCount(writeBlockRequestObj.getCount()+1);
 			
-			dataStub.writeBlock(req.build().toByteArray());
+			byte[] data = dataStub.writeBlock(req.build().toByteArray());
+			
+			WriteBlockResponse res = WriteBlockResponse.parseFrom(data);
+			
+			return res.getCount();
 			
 			
-		} catch (NotBoundException e) {
+			
+			
+		} catch (NotBoundException | InvalidProtocolBufferException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
+		} 
+		
+		
+		return writeBlockRequestObj.getCount()+1;
 	}
 	
 	
@@ -255,10 +288,16 @@ public class DataNodeDriver implements IDataNode {
 		BlockLocations.Builder blkLocations = BlockLocations.newBuilder();
 		blkLocations.setBlockNumber(blockNumber);
 		
-		DataNodeLocation dataNode = locs.get(1);
+		//0 will be the current data node
 		
+		DataNodeLocation dataNode = locs.get(1); // this is the nexrt datanode in chain
 		
-		blkLocations.addLocations(dataNode);
+		for(int i=1;i<locs.size();i++)
+		{
+			blkLocations.addLocations(locs.get(i));
+		}
+		
+//		blkLocations.addLocations(dataNode);
 		
 		Registry registry=LocateRegistry.getRegistry(dataNode.getIp(),dataNode.getPort());
 
@@ -298,13 +337,12 @@ public class DataNodeDriver implements IDataNode {
 		
 		createBlockDirectory();
 		dataBlocks = readBlocksFromDir();
-//		System.out.println(dataBlocks);
 		
-	//	bindToRegistry();
+		bindToRegistry();
 		
-	//	sendBlockReport();
+		sendBlockReport();
 		
-		//sendHeartBeat();
+		sendHeartBeat();
 		
 		System.out.println(dataBlocks);
 		
@@ -374,6 +412,14 @@ public class DataNodeDriver implements IDataNode {
 					System.exit(0);
 				}
 				
+				if(res.getDeleteBlocksCount()>0)
+				{
+					for(String block : res.getDeleteBlocksList())
+					{
+						removeBlockInDir(block);
+					}
+					
+				}
 				
 			} catch (InvalidProtocolBufferException e) {
 				// TODO Auto-generated catch block
@@ -577,6 +623,8 @@ public class DataNodeDriver implements IDataNode {
 	public static synchronized void removeBlockInDir(String blockID)
 	{
 		dataBlocks.remove(blockID);		
+		File rmFile = new File(getDirectoryName()+"/"+blockID);
+		rmFile.delete();
 	}
 	
 	
@@ -618,6 +666,13 @@ public class DataNodeDriver implements IDataNode {
 	@Override
 	public byte[] readBlockSize(byte[] inp) throws RemoteException {
 		// TODO Auto-generated method stub
+		
+		
+		String fileName = null;
+		
+		File file = new File(fileName);
+	
+		//return file.length();
 		return null;
 	}
 	
