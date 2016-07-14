@@ -11,19 +11,19 @@ import com.hdfs.miscl.Constants;
 
 public class PutFile {
 
-	private HashMap<Integer,String> fileHandle;   // fileHandle ,fileName 
-	private HashMap<Integer,Vector<String>> fileBlocks;   // fileHandle , blocksAssigned so far
+	public HashMap<Integer,String> fileHandletoFileName;   // fileHandle ,fileName 
+	public HashMap<Integer,Vector<String>> fileBlocks;   // fileHandle , blocksAssigned so far
 	
 	public PutFile() {
 		// TODO Auto-generated constructor stub
-		fileHandle = new HashMap<>();
+		fileHandletoFileName = new HashMap<>();
 		fileBlocks = new HashMap<>();
 		
 	}
 	
 	public void insertFileHandle(String fileName,int handle)
 	{
-		fileHandle.put(handle,fileName);
+		fileHandletoFileName.put(handle,fileName);
 		fileBlocks.put(handle,new Vector<String>());
 	}
 	
@@ -43,7 +43,7 @@ public class PutFile {
 		 * the blocknumbers have to be written line separated into a new file
 		 */
 		
-		sb.append(fileHandle.get(handle));
+		sb.append(fileHandletoFileName.get(handle));
 		sb.append(":");
 		for(int i=0;i<fileBlocks.get(handle).size();i++)
 		{
@@ -58,7 +58,7 @@ public class PutFile {
 		
 		writeToConf(sb.toString());
 		
-		fileHandle.remove(handle);
+		fileHandletoFileName.remove(handle);
 		fileBlocks.remove(handle);
 	}
 	
@@ -70,7 +70,7 @@ public class PutFile {
 		 * File handle maps handle to a filename, the filename has to be appended in the NNConf
 		 * the blocknumbers have to be written line separated into a new file
 		 */
-		String fileName  = fileHandle.get(handle);
+		String fileName  = fileHandletoFileName.get(handle);
 		fileName += "\n";
 		writeToConfNew(fileName);
 		
@@ -92,9 +92,11 @@ public class PutFile {
 		
 		writeFileBlocks(sb.toString(),fileName);
 		
-		fileHandle.remove(handle);
+		fileHandletoFileName.remove(handle);
 		fileBlocks.remove(handle);
 	}
+	
+	
 	
 	
 	public void insertFileBlock(int handle,String numBlock)
@@ -147,6 +149,43 @@ public class PutFile {
 		
 		myFileWriter.writeonly(in);
 		myFileWriter.closeFile();
+	}
+
+	
+	public HashMap<String,Integer> removeFileHandleNew(int handle,HashMap<String,Integer> myHashMap)
+	{
+		StringBuilder sb = new StringBuilder();
+		/**
+		 * File handle maps handle to a filename, the filename has to be appended in the NNConf
+		 * the blocknumbers have to be written line separated into a new file
+		 */
+		String fileName  = fileHandletoFileName.get(handle);
+		fileName += "\n";
+		writeToConfNew(fileName);
+		
+		/**
+		 * Create a new file, to store the block numbers in it
+		 */
+		
+		for(int i=0;i<fileBlocks.get(handle).size();i++)
+		{
+			String block= fileBlocks.get(handle).get(i);
+			String[] blockWithVersion = block.split(".");
+			myHashMap.put(blockWithVersion[0]+"."+blockWithVersion[1], 1);//this would add a block like 12.1 
+			sb.append(block.toString());
+			if(i!=fileBlocks.get(handle).size()-1)
+				sb.append("\n"); //write blocks line by line
+			
+		}
+//		sb.append("\n"); not needed since, the content is written to a different file altogether, it
+		//just introduces a blank line
+		
+		writeFileBlocks(sb.toString(),fileName);
+		
+		fileHandletoFileName.remove(handle);
+		fileBlocks.remove(handle);
+		
+		return myHashMap;
 	}
 	
 }
