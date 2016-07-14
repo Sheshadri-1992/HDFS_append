@@ -31,6 +31,7 @@ import com.hdfs.miscl.Hdfs.OpenFileResponse;
 import com.hdfs.miscl.Hdfs.ReadBlockRequest;
 import com.hdfs.miscl.Hdfs.ReadBlockResponse;
 import com.hdfs.miscl.Hdfs.WriteBlockRequest;
+import com.hdfs.miscl.Hdfs.WriteBlockResponse;
 import com.hdfs.namenode.INameNode;
 import com.hdfs.datanode.*;
 public class ClientDriver {
@@ -42,7 +43,7 @@ public class ClientDriver {
 	public static FileInputStream fis;
 	public static long FILESIZE;
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws NotBoundException, IOException {
 		// TODO Auto-generated method stub
 
 		System.setProperty("java.security.policy","./security.policy");
@@ -69,9 +70,210 @@ public class ClientDriver {
 			//Calls the list method of the name node server
 			callListBlocks();
 		}
+		else if(args[1].toLowerCase().equals("append"))
+		{		
+			openFileAppend();
+		}
 		
 				
 	}
+
+	private static void openFileAppend() throws NotBoundException, IOException {
+		byte[] responseArray;
+		OpenFileRequest.Builder openFileReqObj = OpenFileRequest.newBuilder();
+		openFileReqObj.setFileName(fileName);
+		openFileReqObj.setForRead(false);
+		openFileReqObj.setIsAppend(true);
+		
+		
+		Registry registry=LocateRegistry.getRegistry(Constants.NAME_NODE_IP,Registry.REGISTRY_PORT);
+		INameNode nameStub;
+		int status;
+		nameStub = (INameNode) registry.lookup(Constants.NAME_NODE);
+		responseArray = nameStub.openFile(openFileReqObj.build().toByteArray());
+		
+		/**The response Array will contain the FileHandle status and the block numbers **/
+		
+		OpenFileResponse responseObj = OpenFileResponse.parseFrom(responseArray);
+		fileHandle = responseObj.getHandle();
+		System.out.println("The file handle is "+fileHandle);
+		
+		if(responseObj.getStatus()==Constants.STATUS_NOT_FOUND||responseObj.getStatus()==Constants.STATUS_FAILED)
+		{
+			System.out.println("fatal error");
+			System.exit(0);
+		}
+		
+		
+		List<String> blockNums = responseObj.getBlockNumsList();
+		String last_blocknum=blockNums.get(0);
+		
+		
+		int size=(int) responseObj.getSize();
+		//asssuming size came in bytes
+		int remainsize=(32*1000*1024)-size;
+		//
+		//WriteBlockRequest.Builder writeBlockObj = WriteBlockRequest.newBuilder();
+		
+		   String newLine = System.getProperty("line.separator");
+		    BufferedWriter writer = null;
+		    //System.out.println("Reading Strings from console");
+		    
+		    writer = new BufferedWriter( new FileWriter( "test.txt"));
+		   
+		    
+		      //You use System.in to get the Strings entered in console by user
+		      try
+		      {
+		      //You need to create BufferedReader which has System.in to get user input
+		      BufferedReader br = new BufferedReader(new
+		                              InputStreamReader(System.in));
+		      String userInput="";
+		     System.out.println("Enter text to append...");
+		      System.out.println("Enter 'quit' to quit.");
+		      do{
+		        
+		          userInput = (String) br.readLine();
+		         if( userInput.equals("quit"))
+		        	 break;
+		          writer.write(  userInput);
+		          writer.write("\n");
+		        } while(!userInput.equals("quit"));
+		      
+		      if ( writer != null)
+		          writer.close( );
+		      }
+		      catch(Exception e)
+		      {
+		      }
+		      
+		      BufferedReader breader = null;
+		      breader = new BufferedReader(new FileReader("test.txt") );
+		      char[] newCharArray = new char[remainsize];
+		      breader.read(newCharArray, 0, remainsize);
+		      
+		      byte[] array=new String(newCharArray).getBytes(StandardCharsets.UTF_8);
+		      
+		      
+		      BlockLocationRequest.Builder blockLocReqObj = BlockLocationRequest.newBuilder();
+				
+				
+				
+				blockLocReqObj.addAllBlockNums(blockNums);
+												
+				try {
+					responseArray = nameStub.getBlockLocations(blockLocReqObj.build().toByteArray());
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				
+				
+				
+				BlockLocationResponse blockLocResObj = BlockLocationResponse.parseFrom(responseArray);
+			
+				if(blockLocResObj.getStatus()==Constants.STATUS_FAILED)
+				{
+					System.out.println("Fatal error!");
+					System.exit(0);
+				}
+				
+				
+				List<BlockLocations> blockLocations =  blockLocResObj.getBlockLocationsList();
+				
+				BlockLocations thisBlock = blockLocations.get(0);
+				String blockNumber = thisBlock.getBlockNumber();
+				List<DataNodeLocation> dataNodes = thisBlock.getLocationsList();
+				
+		      
+				int dataNodeCounter=0;
+				
+				DataNodeLocation thisDataNode = null;					
+				String ip;
+				int port ; 
+				
+				
+				IDataNode dataStub=null;
+				
+				boolean gotDataNodeFlag=false;
+				
+				
+				do
+				{
+					try
+					{
+						thisDataNode = dataNodes.get(dataNodeCounter);
+						ip = thisDataNode.getIp();
+						port = thisDataNode.getPort();
+													
+						Registry registry2=LocateRegistry.getRegistry(ip,port);					
+						dataStub = (IDataNode) registry2.lookup(Constants.DATA_NODE_ID);
+						gotDataNodeFlag=true;
+					}
+					catch (RemoteException e) {
+						
+						gotDataNodeFlag=false;
+//						System.out.println("Remote Exception");
+						dataNodeCounter++;
+					} 
+				}					
+				while(gotDataNodeFlag==false && dataNodeCounter<dataNodes.size());
+				
+				
+				if(dataNodeCounter == dataNodes.size())
+				{
+					System.out.println("All data nodes are down :( ");
+					System.exit(0);
+				}
+				WriteBlockRequest.Builder writeBlockObj = WriteBlockRequest.newBuilder();
+				writeBlockObj.addData(ByteString.copyFrom(array));
+				writeBlockObj.setBlockInfo(thisBlock);
+				writeBlockObj.setIsAppend(true);
+				writeBlockObj.setCount(0);
+				byte[] response_write=dataStub.writeBlock(writeBlockObj.build().toByteArray());
+				
+				WriteBlockResponse reswriteobj= WriteBlockResponse.parseFrom(response_write);
+				int sucess_count=reswriteobj.getCount();
+				if(sucess_count>=2)
+				{
+					System.out.println("sucess in append");
+
+					CloseFileRequest.Builder closeFileObj = CloseFileRequest.newBuilder();
+					closeFileObj.setHandle(fileHandle);
+					closeFileObj.setDecision(1);
+					
+					byte[] receivedArray = nameStub.closeFile(closeFileObj.build().toByteArray());
+					CloseFileResponse closeResObj = CloseFileResponse.parseFrom(receivedArray);
+					if(closeResObj.getStatus()==Constants.STATUS_FAILED)
+					{
+						System.out.println("Close File response Status Failed");
+						System.exit(0);
+					}
+					//comment
+					//comment
+				}
+				else
+				{
+					CloseFileRequest.Builder closeFileObj = CloseFileRequest.newBuilder();
+					closeFileObj.setHandle(fileHandle);
+					closeFileObj.setDecision(0);
+					
+					byte[] receivedArray = nameStub.closeFile(closeFileObj.build().toByteArray());
+					CloseFileResponse closeResObj = CloseFileResponse.parseFrom(receivedArray);
+					if(closeResObj.getStatus()==Constants.STATUS_FAILED)
+					{
+						System.out.println("Close File response Status Failed");
+						System.exit(0);
+					}
+					
+				}
+				
+		      
+		  }
+		
+		
+		
+	
 
 	/**Call list blocks from Name node server**/
 	public static void callListBlocks()
