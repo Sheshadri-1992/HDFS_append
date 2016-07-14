@@ -112,7 +112,7 @@ public class ClientDriver {
 		int size=(int) responseObj.getSize();
 		//asssuming size came in bytes
 		int remainsize=(32*1000*1024)-size;
-		
+		//
 		//WriteBlockRequest.Builder writeBlockObj = WriteBlockRequest.newBuilder();
 		
 		   String newLine = System.getProperty("line.separator");
