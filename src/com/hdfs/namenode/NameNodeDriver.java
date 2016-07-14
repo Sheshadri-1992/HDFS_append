@@ -1,14 +1,14 @@
 package com.hdfs.namenode;
 
 import java.io.BufferedReader;
-import java.io.File;
+//import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.nio.channels.FileLock;
+//import java.net.InetAddress;
+//import java.net.UnknownHostException;
+
 import java.rmi.AlreadyBoundException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
+//import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -46,6 +46,9 @@ import com.hdfs.miscl.Hdfs.ListFilesRequest;
 import com.hdfs.miscl.Hdfs.ListFilesResponse;
 import com.hdfs.miscl.Hdfs.OpenFileRequest;
 import com.hdfs.miscl.Hdfs.OpenFileResponse;
+import com.hdfs.miscl.Hdfs.ReadBlockResponse;
+import com.hdfs.miscl.Hdfs.ReadBlockSizeRequest;
+import com.hdfs.miscl.Hdfs.ReadBlockSizeResponse;
 
 public class NameNodeDriver implements INameNode
 {
@@ -53,6 +56,9 @@ public class NameNodeDriver implements INameNode
 	public static HashMap<Integer,DataNodeLocation>  dataNodes;   //data node id, location
 	public static HashMap<String,List<DataNodeLocation>> blockLocations;
 	public static HashMap<Integer,Long>  heartBeatDataNodes; 
+	public static HashMap<String,Integer> allBlocksHashMap;//all blocks that are stored in the HDFS right now
+	public static HashMap<String,Integer> activeBlocksHashMap;//all blocks that are either being written or being appended
+	public static HashMap<Integer,Vector<String>> handleBlockHashMap;// this will hold only append blocks(old and new), so that needed ones can be removed
 	public static PutFile putFile ;
 	public static GetFile getFile;
 	public static int numBlock=0;
@@ -60,6 +66,10 @@ public class NameNodeDriver implements INameNode
 	public static void main(String[] args) {
 
 		System.out.println("Hello");
+		/**create nnconf file and a directory file has to be created here**/
+		PopulateBlocks popBlkObj = new PopulateBlocks();
+		/**creates the initial map of all block numbers **/
+		allBlocksHashMap = popBlkObj.returnAllBlocks();
 		
 		System.setProperty("java.security.policy","./security.policy");
 		//set the security manager
@@ -182,6 +192,7 @@ public class NameNodeDriver implements INameNode
 		/**here the decision status is as follows
 		 * 0 -abort: retain the old number
 		 * 1 - commit: send the new number, send old number in the block report
+		 * -1 - neither abort nor commit
 		 **/
 		
 		try {
@@ -189,12 +200,62 @@ public class NameNodeDriver implements INameNode
 			res.setStatus(Constants.STATUS_SUCCESS);
 			
 			Integer handle = req.getHandle();
+			Integer decision = req.getDecision();
 			
-			if(handle != null)
+			/**commit the changes, the following need to be performed
+			 * 1. discard the old number
+			 * 2. update the value to new number
+			 * 3. write the new number to the end of the conf file eg 12.1.9 becomes 12.9.9
+			 */
+			if(decision==1)//commit
 			{
-				putFile.removeFileHandle(handle);
+				Vector<String> myBlocks = handleBlockHashMap.get(handle);
+				String oldBlock = myBlocks.get(0);
+				String newBlock = myBlocks.get(1);
 				
+				String[] clockOfNewBlock = newBlock.split(".");
+				
+				allBlocksHashMap.remove(oldBlock);
+				allBlocksHashMap.put(newBlock, 1);// this reflects the append of the file
+				
+				/**PERSISTANT CHANGE: update the clock of the last block **/
+				String fileName = putFile.fileHandletoFileName.get(handle);				
+				updateClockLastBlock(newBlock+"."+clockOfNewBlock[1], fileName);//newclock is 12.9 changes to 12.9.9
+				
+				/**remove the entry from the block handle hashmap **/
+				activeBlocksHashMap.remove(newBlock);
+				
+				/**remove the file handle from the handleHashMap **/
+				handleBlockHashMap.remove(handle);
+				
+				/**now finally dissociate the file handle **/
+				putFile.removeFileHandleNew(handle);
 			}
+			else if(decision==0)//abort, so remove the entry from the active block hashmap
+			{
+				Vector<String> myBlocks = handleBlockHashMap.get(handle);				
+				String newBlock = myBlocks.get(1);
+				
+				/**remove the entry from the block handle hashmap **/
+				activeBlocksHashMap.remove(newBlock);
+				
+				/**remove the file handle from the handleHashMap **/
+				handleBlockHashMap.remove(handle);
+				
+				/**now finally dissociate the file handle **/
+				putFile.removeFileHandleNew(handle);
+			}
+			else
+			{
+				if(handle != null)
+				{
+					putFile.removeFileHandle(handle);
+					
+				}
+			}
+			
+			
+			
 			
 		} catch (InvalidProtocolBufferException e) {
 			// TODO Auto-generated catch block
@@ -250,6 +311,8 @@ public class NameNodeDriver implements INameNode
 			int handle = req.getHandle();
 			int numBlock = getBlockNum(); //here is the needed change, 12 to 12.1.1
 			String newNumBlock = String.valueOf(numBlock);
+			/** all blocks under processing are added here **/
+			activeBlocksHashMap.put(numBlock+".1", 1);
 			newNumBlock += ".1.1"; //version and clock
 			
 			putFile.insertFileBlock(handle, newNumBlock);
@@ -258,8 +321,7 @@ public class NameNodeDriver implements INameNode
 			res.setStatus(Constants.STATUS_SUCCESS);
 			
 			BlockLocations.Builder blocks =  BlockLocations.newBuilder();
-			
-			
+					
 			
 			int max = dataNodes.values().size();
 			
@@ -286,7 +348,7 @@ public class NameNodeDriver implements INameNode
 			
 	
 //			System.out.println("Num block "+numBlock);
-			blocks.setBlockNumber(numBlock+"");//this reads a 
+			blocks.setBlockNumber(numBlock+".1");//initial version number is 1, therefore 12.1
 			res.setNewBlock(blocks);
 			
 			System.out.println("Response" + res);
@@ -372,6 +434,23 @@ public class NameNodeDriver implements INameNode
 				
 			}
 			
+			/** now need to use hashmap to  this to send delete blocks **/
+			List<String> deleteBlocks = null;
+			
+			for(int i=0;i<req.getBlockNumbersCount();i++)
+			{
+				String numBlock = req.getBlockNumbers(i);
+				/**check if the block is present in the allblocks hashMap **/
+				if(allBlocksHashMap.containsKey(numBlock)==false) //then this maybe an incremented block
+				{
+					if(activeBlocksHashMap.containsKey(numBlock)==false)
+					{
+						deleteBlocks.add(numBlock);
+					}
+				}
+			}
+			
+			res.addAllDeleteBlocks(deleteBlocks);
 //			System.out.print(dataNodes.get(id));
 			
 			res.addStatus(Constants.STATUS_SUCCESS);
@@ -644,13 +723,23 @@ public class NameNodeDriver implements INameNode
 			    /** this would give 12.3 **/
 			    String newBlock = myArray[0];
 			    newBlock = newBlock+".";
-			    newBlock = newBlock + String.valueOf(clock); 
+			    newBlock = newBlock + String.valueOf(clock);
+			    /**add block to active map **/
+			    activeBlocksHashMap.put(newBlock, 1);
+			    
 			    updateClockLastBlock(fileName,newBlock);
 			    
 			    /** This would give me 12.1**/
 			    String oldBlock = myArray[0];
 			    oldBlock = oldBlock +".";
 			    oldBlock = oldBlock + myArray[myArray.length-1];
+			    
+			    /**add block to handleBlock hashmap **/
+			    Vector<String> blockVersions = new Vector<>();
+			    blockVersions.addElement(oldBlock);
+			    blockVersions.addElement(newBlock);
+			    handleBlockHashMap.put(fileHandle, blockVersions);
+			    
 			    
 			    /**Find the size of the file **/
 			    /**
@@ -769,6 +858,28 @@ public class NameNodeDriver implements INameNode
 		else
 		{
 //			dataStub.call shweta's method
+			ReadBlockSizeRequest.Builder fileBlockReq = ReadBlockSizeRequest.newBuilder();
+			fileBlockReq.setBlockNumber(filename);
+			
+			try {
+				byte[] responseArray = dataStub.readBlockSize(fileBlockReq.build().toByteArray());
+				try {
+					ReadBlockSizeResponse responseObj = ReadBlockSizeResponse.parseFrom(responseArray);
+					
+					if(responseObj.getStatus()!=Constants.STATUS_FAILED)
+					{
+						size = responseObj.getSize();
+					}
+					
+					
+				} catch (InvalidProtocolBufferException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
 		

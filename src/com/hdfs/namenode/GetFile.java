@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Vector;
 
 import com.hdfs.miscl.Constants;
-import com.hdfs.miscl.Hdfs.BlockLocationRequest;
 import com.hdfs.miscl.Hdfs.BlockLocations;
 import com.hdfs.miscl.Hdfs.DataNodeLocation;
 import com.hdfs.datanode.*;
