@@ -10,14 +10,14 @@ message OpenFileResponse
   optional int32 handle = 2; // file handle. Use this to close file on write
 // for read, the numbers for the various blocks. Not populated in write mode
   repeated string blockNums = 3;    // will contain old_block number : 12.1
-  optional int32 size = 4; // only populated for append . Returns size of last block
+  optional int64 size = 4; // only populated for append . Returns size of last block
   optional string newBlockNum = 5; //populated for append . ex: 12.3 
 }
 
 
 message CloseFileRequest {
   optional int32 handle = 1; // obtained from OpenFile
-  optional int32 decision = 2; // 0-Abort 1-Commit
+  optional int32 decision = 2; // 0-Abort 1-Commit, nice!
 
 }
 
@@ -104,4 +104,14 @@ message HeartBeatRequest {
 
 message HeartBeatResponse {
   optional int32 status = 1;
+}
+
+//obtain size from Datanode
+message ReadBlockSizeRequest {
+  optional string blockNumber = 1;
+}
+
+message ReadBlockSizeResponse {
+  optional int32 status = 1;
+  optional int64 size = 2;
 }

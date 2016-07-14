@@ -1,13 +1,16 @@
 package com.hdfs.namenode;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.channels.FileLock;
 import java.rmi.AlreadyBoundException;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -16,11 +19,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Vector;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.hdfs.datanode.FileReaderClass;
+import com.hdfs.datanode.FileWriterClass;
+import com.hdfs.datanode.IDataNode;
 import com.hdfs.miscl.Constants;
 import com.hdfs.miscl.Hdfs.AssignBlockRequest;
 import com.hdfs.miscl.Hdfs.AssignBlockResponse;
@@ -122,7 +130,7 @@ public class NameNodeDriver implements INameNode
 					int fileHandle = new Random().nextInt()%100000;
 					fileHandle = Math.abs(fileHandle);
 					System.out.println(fileHandle);
-				    putFile.insertFileHandle(fileName, fileHandle);
+				    putFile.insertFileHandle(fileName, fileHandle); //here the filename is written into NNCONF
 				    
 				    res.setHandle(fileHandle);
 				    res.setStatus(Constants.STATUS_SUCCESS);
@@ -170,6 +178,11 @@ public class NameNodeDriver implements INameNode
 		CloseFileRequest req = null;
 		CloseFileResponse.Builder res = CloseFileResponse.newBuilder();
 		res.setStatus(Constants.STATUS_FAILED);
+		
+		/**here the decision status is as follows
+		 * 0 -abort: retain the old number
+		 * 1 - commit: send the new number, send old number in the block report
+		 **/
 		
 		try {
 			req = CloseFileRequest.parseFrom(inp);
@@ -235,9 +248,11 @@ public class NameNodeDriver implements INameNode
 			AssignBlockRequest req = AssignBlockRequest.parseFrom(inp);
 			
 			int handle = req.getHandle();
-			int numBlock = getBlockNum();
+			int numBlock = getBlockNum(); //here is the needed change, 12 to 12.1.1
+			String newNumBlock = String.valueOf(numBlock);
+			newNumBlock += ".1.1"; //version and clock
 			
-			putFile.insertFileBlock(handle, numBlock);
+			putFile.insertFileBlock(handle, newNumBlock);
 			
 			
 			res.setStatus(Constants.STATUS_SUCCESS);
@@ -333,7 +348,7 @@ public class NameNodeDriver implements INameNode
 			for(int i=0;i<req.getBlockNumbersCount();i++)
 			{
 				String numBlock = req.getBlockNumbers(i);
-				if(!blockLocations.containsKey(numBlock))
+				if(!blockLocations.containsKey(numBlock))//if it doesn't contain key then addd, key and datalocations as the value
 				{
 					
 					List<DataNodeLocation> arrLoc = new ArrayList<DataNodeLocation>();
@@ -342,7 +357,7 @@ public class NameNodeDriver implements INameNode
 					
 					blockLocations.put(numBlock, arrLoc);
 					
-				}else
+				}else //if the size isn't 2(or whatever the replication factor) yet, then append the datanode location to the value
 				{
 					List<DataNodeLocation> tmpLoc = blockLocations.get(numBlock);
 					
@@ -360,12 +375,7 @@ public class NameNodeDriver implements INameNode
 //			System.out.print(dataNodes.get(id));
 			
 			res.addStatus(Constants.STATUS_SUCCESS);
-			
-			
-			
-			
-			
-			
+		
 		} catch (InvalidProtocolBufferException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -443,7 +453,7 @@ public class NameNodeDriver implements INameNode
 	}
 	
 
-
+	/**Need to change it to 3 randoms **/
 	private int[] getTwoRandoms(int max) {
 		// TODO Auto-generated method stub
 		int [] randoms = new int[2];
@@ -515,6 +525,294 @@ public class NameNodeDriver implements INameNode
 		
 		
 	}
+
+
+	/**
+	 * Newly added method, this is to test the new file configuration
+	 */
+	@Override
+	public byte[] openFileNew(byte[] inp) throws RemoteException {
+		// TODO Auto-generated method stub
+		System.out.println("Open file new called");
+		OpenFileResponse.Builder res = OpenFileResponse.newBuilder();
+		res.setStatus(Constants.STATUS_FAILED);
+		
+		OpenFileRequest req;
+		try {
+			req = OpenFileRequest.parseFrom(inp);
+			
+			String fileName = req.getFileName();
+			boolean type = req.getForRead();
+			boolean isAppend = req.getIsAppend();
+			
+			if(isAppend)
+			{
+				byte[] output = appendMethod(inp); 
+				return output;
+			}
+			
+			if(!type)   // type = false then write i.e. put
+			{
+				if(getFile.getFileDetails(fileName)==null)//this means the file isn't present, so we add it
+				{
+					int fileHandle = new Random().nextInt()%100000;
+					fileHandle = Math.abs(fileHandle);
+					System.out.println(fileHandle);
+				    putFile.insertFileHandle(fileName, fileHandle);
+				    
+				    res.setHandle(fileHandle);
+				    res.setStatus(Constants.STATUS_SUCCESS);
+				}
+				else
+				{
+					res.setStatus(Constants.STATUS_NOT_FOUND);
+				}
+				
+			   
+				
+				
+			}else       // type = true then read i.e get
+			{
+				String[] blocks = getFile.getFileDetails(fileName);
+				if(blocks==null)
+				{
+					res.setStatus(Constants.STATUS_NOT_FOUND);
+				}else
+				{
+					res.setStatus(Constants.STATUS_SUCCESS);
+					Iterable<String> iterable = Arrays.asList(blocks);
+					res.addAllBlockNums(iterable);
+				}
+				
+				
+			}
+			
+			
+		} catch (InvalidProtocolBufferException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+		
+		return res.build().toByteArray();
+
+	}
 	
+	public byte[] appendMethod(byte[] inp)
+	{
+		/**
+		 * 1. create a file handle
+		 * 2. Increment the clock, save it in the memory and in persistent storage
+		 * 3. send the client the new clock number 
+		 */
+		System.out.println("Append file method called ");
+		OpenFileResponse.Builder res = OpenFileResponse.newBuilder();
+		res.setStatus(Constants.STATUS_FAILED);
+		
+		OpenFileRequest req;
+
+		try {
+			req = OpenFileRequest.parseFrom(inp);
+			String fileName = req.getFileName();
+			
+			if(getFile.getFileDetails(fileName)==null)//this means the file isn't present, so we add it
+			{
+				
+				res.setStatus(Constants.STATUS_NOT_FOUND);
+				
+			}
+			else
+			{
+				int fileHandle = new Random().nextInt()%100000;
+				fileHandle = Math.abs(fileHandle);
+				System.out.println(fileHandle);
+			    putFile.insertFileHandle(fileName, fileHandle);
+			    
+			    /**
+			     * Size of last block, last block and new block has to be sent
+			     */
+			    
+			    fileName = Constants.PREFIX_DIR+fileName;
+			    String lastBlock = retrieveLastBlock(fileName);
+			    
+			    /** the received last block is 12.1.2 **/			    
+			    String[] myArray = lastBlock.split(".");
+			    int clock = Integer.parseInt(myArray[myArray.length-1]);//the last index is clock
+			    clock = clock +1 ;//increment the clock
+			    
+			    /** this would give 12.3 **/
+			    String newBlock = myArray[0];
+			    newBlock = newBlock+".";
+			    newBlock = newBlock + String.valueOf(clock); 
+			    updateClockLastBlock(fileName,newBlock);
+			    
+			    /** This would give me 12.1**/
+			    String oldBlock = myArray[0];
+			    oldBlock = oldBlock +".";
+			    oldBlock = oldBlock + myArray[myArray.length-1];
+			    
+			    /**Find the size of the file **/
+			    /**
+			     * Find locations of the data nodes containing this block
+			     */
+			    long sizeOfLastBlock = findFileSize(oldBlock);
+			    
+			    
+			    /** set the response**/
+			    if(sizeOfLastBlock!=-1)
+			    	res.setStatus(Constants.STATUS_SUCCESS);
+			    /**handle**/
+			    res.setHandle(fileHandle);
+			    
+			    /**old block only one last block**/
+			    String[] blockNums = new String[1]; //only last block is sent			    
+			    blockNums[0] = oldBlock;
+			    Iterable<String> iterable = Arrays.asList(blockNums);			    
+			    res.addAllBlockNums(iterable);
+			    
+			    /**size of the last block**/
+			    res.setSize(sizeOfLastBlock);
+			    
+			    /**new block **/
+			    res.setNewBlockNum(newBlock);
+			    
+			    
+			}
+			
+			
+		} catch (InvalidProtocolBufferException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return res.build().toByteArray();
+	}
 	
+	/**This retrieves the last block of the file **/
+	String retrieveLastBlock(String fileName)
+	{
+		FileReaderClass myFileReader = new FileReaderClass(fileName);
+		myFileReader.openFile();
+		String prev = "";
+		String next = "";
+		
+		try {
+			next = myFileReader.buff_reader.readLine();
+			while(next!=null)
+			{
+				prev = next;
+				next = myFileReader.buff_reader.readLine();
+			}
+			
+		myFileReader.closeFile();
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return prev;
+	}
+	
+	/**
+	 * This method returns the size of the file	  
+	 */
+	
+	public long findFileSize(String filename) 
+	{
+		/**find the locations of the datanodes for the given block/filename**/
+//		filename = Constants.PREFIX_DIR+filename;
+		List<DataNodeLocation> myLocations = blockLocations.get(filename);
+		IDataNode dataStub=null;
+		
+		int dataNodeCounter=0;
+		long size = 0;
+		DataNodeLocation thisDataNode = null;//dataNodes.get(dataNodeCounter);					
+		String ip;// = thisDataNode.getIp();
+		int port ; //= thisDataNode.getPort();
+		boolean gotDataNodeFlag=false;
+		
+		do
+		{
+			try
+			{
+				thisDataNode = myLocations.get(dataNodeCounter);
+				ip = thisDataNode.getIp();
+				port = thisDataNode.getPort();
+											
+				Registry registry2=LocateRegistry.getRegistry(ip,port);					
+				dataStub = (IDataNode) registry2.lookup(Constants.DATA_NODE_ID);
+				gotDataNodeFlag=true;
+			}
+			catch (RemoteException e) {
+				
+				gotDataNodeFlag=false;
+				System.out.println("Remote Exception trying to obtain size of last block");
+				dataNodeCounter++;
+			} catch (NotBoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				System.out.println("Trying to obtain last block size");
+			} 
+		}					
+		while(gotDataNodeFlag==false && dataNodeCounter<dataNodes.size());
+		
+		/**This is an indication to say that even after checking all the datanodes
+		 * for that particular block we couldn't get the block since all the nodes were down
+		 * so we exit ( we may discuss and change it)
+		 */
+		if(dataNodeCounter == dataNodes.size())
+		{
+			System.out.println("All data nodes are down :( ");
+			System.out.println("Trying to obtain last block size");
+		}
+		else
+		{
+//			dataStub.call shweta's method
+		}
+		
+		
+	    return size;
+	}
+	
+	/**This updates the clock of the last block of the file **/
+	public void updateClockLastBlock(String newBlock,String fileName)
+	{
+		FileReaderClass myFileReader = new FileReaderClass(fileName);
+		myFileReader.openFile();
+		
+		Vector<String> myString = new Vector<>();
+		try
+		{
+			String line = myFileReader.buff_reader.readLine();
+			
+			while(line!=null)
+			{
+				myString.add(line);
+				line = myFileReader.buff_reader.readLine();
+			}
+			
+			/** now modify the last line and write into the file again**/
+			int lastIndex = myString.size();
+			myString.set(lastIndex-1, newBlock);
+			
+			myFileReader.closeFile();
+			
+			FileWriterClass myFileWriter = new FileWriterClass(fileName);
+			myFileWriter.createFile();
+			
+			for (String string : myString) {
+				myFileWriter.writeline(string);
+			}
+			
+			/**here the last line has now been updated to a newer clock**/			
+			myFileWriter.closeFile();
+		}
+		
+		catch(IOException e)
+		{
+			System.out.println("IOException in Namenode,method is updateClock last block");
+		}
+			
+	}
 }
