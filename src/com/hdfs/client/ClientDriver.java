@@ -109,7 +109,7 @@ public class ClientDriver {
 		String last_blocknum=blockNums.get(0);
 		
 		
-		int size=responseObj.getSize();
+		int size=(int) responseObj.getSize();
 		//asssuming size came in bytes
 		int remainsize=(32*1000*1024)-size;
 		
