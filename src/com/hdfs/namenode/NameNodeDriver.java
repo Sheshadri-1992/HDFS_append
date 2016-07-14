@@ -238,7 +238,7 @@ public class NameNodeDriver implements INameNode
 				String oldBlock = myBlocks.get(0);
 				String newBlock = myBlocks.get(1);
 				
-				String[] clockOfNewBlock = newBlock.split(".");
+				String[] clockOfNewBlock = newBlock.split("\\.");
 				
 				allBlocksHashMap.remove(oldBlock);
 				allBlocksHashMap.put(newBlock, 1);// this reflects the append of the file
@@ -752,7 +752,7 @@ public class NameNodeDriver implements INameNode
 			    String lastBlock = retrieveLastBlock(fileName);
 			    
 			    /** the received last block is 12.1.2 **/			    
-			    String[] myArray = lastBlock.split(".");
+			    String[] myArray = lastBlock.split("\\.");
 			    int clock = Integer.parseInt(myArray[myArray.length-1]);//the last index is clock
 			    clock = clock +1 ;//increment the clock
 			    
