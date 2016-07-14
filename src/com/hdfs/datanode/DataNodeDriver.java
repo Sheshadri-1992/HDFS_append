@@ -16,6 +16,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,6 +28,8 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+
+import javax.swing.plaf.FileChooserUI;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -62,7 +65,7 @@ public class DataNodeDriver implements IDataNode {
 		 * c) convert into byte
 		 * d) send back
 		 */
-		
+		// add method in iDataNode
 //		System.out.println("in reader");
 		
 		ReadBlockResponse.Builder readBlkResObj = ReadBlockResponse.newBuilder();
@@ -121,47 +124,50 @@ public class DataNodeDriver implements IDataNode {
 			final BlockLocations blockLocObj = writeBlockRequestObj.getBlockInfo();
 			
 			final String blockNumber = blockLocObj.getBlockNumber();
-			
-			
 			String str = new String(receivedByteArray, StandardCharsets.UTF_8);
 			
-			/**Write into FIle **/
-			FileWriterClass fileWriterObj = new FileWriterClass(blockNumber+"");
-			fileWriterObj.createFile();
-			fileWriterObj.writeonly(str);
-			fileWriterObj.closeFile();
-			
-			/*update local list of blocks */
-			insertBlock(blockNumber);
-			
-//			System.out.println("locations "+blockLocObj);
-			
-			
-			/**This is the cascading part **/
-			
-			if(blockLocObj.getLocationsCount()>1)
+			if(writeBlockRequestObj.getIsAppend())
 			{
+
+				createDuplicate(blockNumber,writeBlockRequestObj.getNewBlockNum(),str);
 				
-				 new Thread(new Runnable() {
-		             @Override
-		             public void run() {
-		            	 try {
-							sendToNextDataNode(blockLocObj,blockNumber,writeBlockRequestObj);
-						} catch (RemoteException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-		             }
-		         }).start();
+				return null;
+				
+			}else
+			{
+				/**Write into FIle **/
+				FileWriterClass fileWriterObj = new FileWriterClass(getDirectoryName()+"/"+blockNumber);
+				fileWriterObj.createFile();
+				fileWriterObj.writeonly(str);
+				fileWriterObj.closeFile();
+				
+				/*update local list of blocks */
+				insertBlockInDir(blockNumber);
+				
+//				System.out.println("locations "+blockLocObj);
 				
 				
+				/**This is the cascading part **/
 				
+				if(blockLocObj.getLocationsCount()>1)
+				{
+					
+					 new Thread(new Runnable() {
+			             @Override
+			             public void run() {
+			            	 try {
+								sendToNextDataNode(blockLocObj,blockNumber,writeBlockRequestObj);
+							} catch (RemoteException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+			             }
+			         }).start();
+				}
 				
+				return null;
 				
-			
 			}
-			
-			
 			
 			
 			
@@ -169,15 +175,78 @@ public class DataNodeDriver implements IDataNode {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
 		return null;
+		
 	}
+
+	private static void createDuplicate(String blockNumber, String newBlockNum,String data) {
+		// TODO Auto-generated method stub
+		
+		File inFile = new File(getDirectoryName()+"/"+blockNumber);
+		File outFile = new File(getDirectoryName()+"/"+newBlockNum);
+		
+		try {
+			Files.copy(inFile.toPath(), outFile.toPath());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+
+		PrintWriter pw;
+		try {
+			pw = new PrintWriter(new FileWriter(outFile, true));
+		    pw.write(data);
+	        pw.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+
 
 	/**Interface methods end here 
 	 * @param blockLocObj 
 	 * @param blockNumber 
 	 * @param writeBlockRequestObj 
 	 * @throws RemoteException **/
+	
+	
+	
+	
+	public static void sendToNextDataNodeAppend(BlockLocations blockLocObj, String blockNumber, WriteBlockRequest writeBlockRequestObj) throws RemoteException
+	{
+		List<DataNodeLocation> locs = blockLocObj.getLocationsList();
+		BlockLocations.Builder blkLocations = BlockLocations.newBuilder();
+		blkLocations.setBlockNumber(blockNumber);
+		
+		DataNodeLocation dataNode = locs.get(1);
+		
+		
+		blkLocations.addLocations(dataNode);
+		
+		Registry registry=LocateRegistry.getRegistry(dataNode.getIp(),dataNode.getPort());
+
+		IDataNode dataStub;
+		try {
+			dataStub = (IDataNode) registry.lookup(Constants.DATA_NODE_ID);
+			
+			WriteBlockRequest.Builder req = WriteBlockRequest.newBuilder();
+			
+			req.addData(writeBlockRequestObj.getData(0));
+			req.setBlockInfo(blkLocations);
+			
+			dataStub.writeBlock(req.build().toByteArray());
+			
+			
+		} catch (NotBoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 	
 	
 	public static void sendToNextDataNode(BlockLocations blockLocObj, String blockNumber, WriteBlockRequest writeBlockRequestObj) throws RemoteException
@@ -227,15 +296,17 @@ public class DataNodeDriver implements IDataNode {
 		System.out.println("Datanode "+id);
 
 		
-		dataBlocks = readBlocksFromFile();
+		createBlockDirectory();
+		dataBlocks = readBlocksFromDir();
 //		System.out.println(dataBlocks);
 		
-		bindToRegistry();
+	//	bindToRegistry();
 		
-		sendBlockReport();
+	//	sendBlockReport();
 		
-		sendHeartBeat();
+		//sendHeartBeat();
 		
+		System.out.println(dataBlocks);
 		
 	}
 
@@ -436,6 +507,8 @@ public class DataNodeDriver implements IDataNode {
 		
 	}
 	
+	
+	
 	public static List<String> readBlocksFromFile()
 	{
 		ArrayList<String> blocks = new ArrayList<String>();
@@ -476,6 +549,37 @@ public class DataNodeDriver implements IDataNode {
 		return blocks;
 	}
 	
+	public static List<String> readBlocksFromDir()
+	{
+		ArrayList<String> blocks = new ArrayList<String>();
+		
+		File folder = new File(getDirectoryName());
+		File[] files = folder.listFiles();
+		
+		for(File file:files)
+		{
+			if(file.isFile())
+			{
+				if(!file.getName().matches(".*~$"))  //do not include temp files
+					blocks.add(file.getName());
+			}
+		}
+		
+		return blocks;
+	}
+	
+	
+	public static synchronized void insertBlockInDir(String blockID)
+	{
+		dataBlocks.add(blockID);		
+	}
+	
+	public static synchronized void removeBlockInDir(String blockID)
+	{
+		dataBlocks.remove(blockID);		
+	}
+	
+	
 	public static synchronized void insertBlock(String blockID)
 	{
 		dataBlocks.add(blockID);
@@ -492,6 +596,29 @@ public class DataNodeDriver implements IDataNode {
 		}
 		
 		
+	}
+	
+	/* creates folder named DNConf_id which contains all blocks */ 
+	public static void createBlockDirectory()
+	{
+		File dir = new File(getDirectoryName());
+		
+		if(!dir.exists())
+		{
+			dir.mkdir();
+		}
+	}
+	
+	public static String getDirectoryName()
+	{
+		return (Constants.DATA_NODE_CONF+id);
+	}
+
+
+	@Override
+	public byte[] readBlockSize(byte[] inp) throws RemoteException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 }
