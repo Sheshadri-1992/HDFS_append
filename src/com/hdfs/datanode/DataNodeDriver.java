@@ -674,7 +674,7 @@ public class DataNodeDriver implements IDataNode {
 		try {
 			ReadBlockSizeRequest req = ReadBlockSizeRequest.parseFrom(inp);
 			
-			String fileName = req.getBlockNumber();
+			String fileName = getDirectoryName()+"/"+req.getBlockNumber();
 			
 			File file = new File(fileName);
 			response.setSize(file.length());
