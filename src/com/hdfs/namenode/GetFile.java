@@ -45,6 +45,7 @@ public class GetFile {
 				/**open the file with the name**/
 				int count = 0;
 				Vector<String> myBlocks = new Vector<>();
+				/**go inside the file directory**/
 				FileReaderClass myFileReader = new FileReaderClass(Constants.PREFIX_DIR+fileName);
 				myFileReader.openFile();
 				
@@ -61,7 +62,8 @@ public class GetFile {
 				blk_int = new String[myBlocks.size()];
 				count = 0;
 				for (String string : myBlocks) {
-					blk_int[count] = string;
+					String[] blockWithVersion = string.split("\\.");
+					blk_int[count] = blockWithVersion[0]+"."+blockWithVersion[1];
 					count++;
 				}
 				
