@@ -12,6 +12,7 @@ import com.hdfs.miscl.Constants;
 import com.hdfs.miscl.Hdfs.BlockLocationRequest;
 import com.hdfs.miscl.Hdfs.BlockLocations;
 import com.hdfs.miscl.Hdfs.DataNodeLocation;
+import com.hdfs.datanode.*;
 
 public class GetFile {
 	
@@ -19,18 +20,22 @@ public class GetFile {
 	public GetFile() {
 		// TODO Auto-generated constructor stub
 	}
-	
+	/**this procedure has to be changed, currently file:<blocks> are being fetched 
+	 * Now we just need to check for the filename and open another file for retrieving all data blocks
+	 * @param fileName
+	 * @return
+	 */
 	String[] getFileDetails(String fileName)
 	{
 		BufferedReader buff;
 		String [] blk_int =null;
 		
 		try {
-			buff = new BufferedReader(new FileReader(Constants.NAME_NODE_CONF));
+			buff = new BufferedReader(new FileReader(Constants.NAME_NODE_CONF_NEW));
 			String line=null;
 			while((line = buff.readLine())!=null)
 			{
-				if(line.startsWith(fileName+":"))
+				if(line.startsWith(fileName))
 				{
 					break;
 				}
@@ -38,14 +43,30 @@ public class GetFile {
 			
 			if(line!=null)
 			{
-				String token[] = line.split(":");
-				String blocks[] = token[1].split(",");
-				blk_int = new String[blocks.length];
-				for(int i=0;i<blocks.length;i++)
+				/**open the file with the name**/
+				int count = 0;
+				Vector<String> myBlocks = new Vector<>();
+				FileReaderClass myFileReader = new FileReaderClass(fileName);
+				myFileReader.openFile();
+				
+				line = myFileReader.buff_reader.readLine();
+				while(line!=null)
 				{
-					blk_int[i] = blocks[i];
+					count++;
+					myBlocks.addElement(line);
+					line = myFileReader.buff_reader.readLine();
+				}
+				myFileReader.closeFile();
+				
+				/**this is to copy all the contents in the vector into the string array **/
+				blk_int = new String[myBlocks.size()];
+				count = 0;
+				for (String string : myBlocks) {
+					blk_int[count] = string;
+					count++;
 				}
 				
+				myBlocks.clear();
 			}
 			
 			buff.close();
@@ -77,14 +98,17 @@ public class GetFile {
 		return resLocations;
 	}
 	
-	
+	/**
+	 * returns list of all filenames
+	 * @return
+	 */
 	List<String> getAllFileNames()
 	{
 		BufferedReader buff;
 	    List<String> fileNames = new ArrayList<>();
 		
 		try {
-			buff = new BufferedReader(new FileReader(Constants.NAME_NODE_CONF));
+			buff = new BufferedReader(new FileReader(Constants.NAME_NODE_CONF_NEW)); //There is nothing to split :D 
 			String line=null;
 			while((line = buff.readLine())!=null)
 			{
