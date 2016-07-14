@@ -244,8 +244,10 @@ public class NameNodeDriver implements INameNode
 				allBlocksHashMap.put(newBlock, 1);// this reflects the append of the file
 				
 				/**PERSISTANT CHANGE: update the clock of the last block **/
-				String fileName = putFile.fileHandletoFileName.get(handle);				
-				updateClockLastBlock(newBlock+"."+clockOfNewBlock[1], fileName);//newclock is 12.9 changes to 12.9.9
+				String fileName = putFile.fileHandletoFileName.get(handle);	
+				String clock = newBlock+"."+clockOfNewBlock[1];
+				System.out.println("Final Clock is "+clock);
+				updateClockLastBlock(newBlock+"."+clockOfNewBlock[1], Constants.PREFIX_DIR+fileName);//newclock is 12.9 changes to 12.9.9
 				
 				/**remove the entry from the block handle hashmap **/
 				activeBlocksHashMap.remove(newBlock);
