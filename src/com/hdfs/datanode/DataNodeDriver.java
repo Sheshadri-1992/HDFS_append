@@ -80,12 +80,12 @@ public class DataNodeDriver implements IDataNode {
 			
 
 			
-			File myFile = new File(blockNumber+"");
+			File myFile = new File(getDirectoryName()+"/"+blockNumber);
 			long FILESIZE = myFile.length();			
 			int bytesToBeRead = (int) FILESIZE;
 			
 			byte[] newByteArray = null ;//= new byte[bytesToBeRead];
-			Path path = Paths.get(blockNumber+"");
+			Path path = Paths.get(getDirectoryName()+"/"+blockNumber);
 			try {
 				newByteArray = Files.readAllBytes(path);
 			} catch (IOException e) {
