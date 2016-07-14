@@ -46,6 +46,9 @@ import com.hdfs.miscl.Hdfs.ListFilesRequest;
 import com.hdfs.miscl.Hdfs.ListFilesResponse;
 import com.hdfs.miscl.Hdfs.OpenFileRequest;
 import com.hdfs.miscl.Hdfs.OpenFileResponse;
+import com.hdfs.miscl.Hdfs.ReadBlockResponse;
+import com.hdfs.miscl.Hdfs.ReadBlockSizeRequest;
+import com.hdfs.miscl.Hdfs.ReadBlockSizeResponse;
 
 public class NameNodeDriver implements INameNode
 {
@@ -855,6 +858,28 @@ public class NameNodeDriver implements INameNode
 		else
 		{
 //			dataStub.call shweta's method
+			ReadBlockSizeRequest.Builder fileBlockReq = ReadBlockSizeRequest.newBuilder();
+			fileBlockReq.setBlockNumber(filename);
+			
+			try {
+				byte[] responseArray = dataStub.readBlockSize(fileBlockReq.build().toByteArray());
+				try {
+					ReadBlockSizeResponse responseObj = ReadBlockSizeResponse.parseFrom(responseArray);
+					
+					if(responseObj.getStatus()!=Constants.STATUS_FAILED)
+					{
+						size = responseObj.getSize();
+					}
+					
+					
+				} catch (InvalidProtocolBufferException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
 		

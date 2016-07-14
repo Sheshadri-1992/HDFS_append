@@ -34,6 +34,9 @@ public class PopulateBlocks {
 				addBlocksFromFile(myFiles.get(i));
 			}
 			
+			/**clear all the file names **/
+			myFiles.clear();
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
