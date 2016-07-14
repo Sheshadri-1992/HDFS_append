@@ -10,6 +10,11 @@ public class PopulateBlocks {
 
 	public static HashMap<String,Integer> allBlocksHashMap;
 	
+	public PopulateBlocks()
+	{
+		allBlocksHashMap = new HashMap<>();
+	}
+	
 	public HashMap<String,Integer> returnAllBlocks()
 	{
 		/**Scan all files in the Directory file and gather each block **/
@@ -22,12 +27,13 @@ public class PopulateBlocks {
 			line = myFileReader.buff_reader.readLine();
 			while(line!=null)
 			{
-				myFiles.addElement(line);
+				myFiles.add(line);
 				line = myFileReader.buff_reader.readLine();
 			}
 			
 		/** now files are all populated, time to put them in a hashMap and return it**/
 			myFileReader.closeFile();
+			
 			
 			for(int i=0;i<myFiles.size();i++)
 			{
@@ -51,6 +57,7 @@ public class PopulateBlocks {
 	 */
 	public static void addBlocksFromFile(String fileName)
 	{
+		
 		FileReaderClass myFileReader = new FileReaderClass(Constants.PREFIX_DIR+fileName);//File/filename
 		myFileReader.openFile();
 		String line;
@@ -58,7 +65,7 @@ public class PopulateBlocks {
 			line = myFileReader.buff_reader.readLine();
 			while(line!=null)
 			{
-				String[] blockWithVersion = line.split(".");
+				String[] blockWithVersion = line.split("\\.");
 				allBlocksHashMap.put(blockWithVersion[0]+"."+blockWithVersion[1], 1);
 				line = myFileReader.buff_reader.readLine();
 			}		

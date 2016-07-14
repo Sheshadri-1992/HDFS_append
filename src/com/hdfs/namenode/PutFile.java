@@ -130,6 +130,7 @@ public class PutFile {
 		try {
 			pw = new PrintWriter(new FileWriter(Constants.NAME_NODE_CONF_NEW,true));
 		    pw.write(in);
+		    pw.write("\n");
 	        pw.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -160,7 +161,7 @@ public class PutFile {
 		 * the block numbers have to be written line separated into a new file
 		 */
 		String fileName  = fileHandletoFileName.get(handle);
-		fileName += "\n";
+//		fileName += "\n";
 		writeToConfNew(fileName);
 		
 		/**
@@ -170,7 +171,8 @@ public class PutFile {
 		for(int i=0;i<fileBlocks.get(handle).size();i++)
 		{
 			String block= fileBlocks.get(handle).get(i);
-			String[] blockWithVersion = block.split(".");
+			String[] blockWithVersion = block.split("\\.",0);
+			System.out.println(blockWithVersion[0]+"."+blockWithVersion[1]);
 			myHashMap.put(blockWithVersion[0]+"."+blockWithVersion[1], 1);//this would add a block like 12.1 
 			sb.append(block.toString());
 			if(i!=fileBlocks.get(handle).size()-1)

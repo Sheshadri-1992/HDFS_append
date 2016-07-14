@@ -492,6 +492,7 @@ public class ClientDriver {
 		OpenFileRequest.Builder openFileReqObj = OpenFileRequest.newBuilder();
 		openFileReqObj.setFileName(fileName);
 		openFileReqObj.setForRead(false);		
+
 		
 		try 
 		{			
@@ -601,6 +602,7 @@ public class ClientDriver {
 					
 					CloseFileRequest.Builder closeFileObj = CloseFileRequest.newBuilder();
 					closeFileObj.setHandle(fileHandle);
+					closeFileObj.setDecision(Constants.STATUS_NOT_FOUND);
 					
 					byte[] receivedArray = nameStub.closeFile(closeFileObj.build().toByteArray());
 					CloseFileResponse closeResObj = CloseFileResponse.parseFrom(receivedArray);

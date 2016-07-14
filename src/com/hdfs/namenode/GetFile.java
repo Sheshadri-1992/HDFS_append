@@ -45,7 +45,7 @@ public class GetFile {
 				/**open the file with the name**/
 				int count = 0;
 				Vector<String> myBlocks = new Vector<>();
-				FileReaderClass myFileReader = new FileReaderClass(fileName);
+				FileReaderClass myFileReader = new FileReaderClass(Constants.PREFIX_DIR+fileName);
 				myFileReader.openFile();
 				
 				line = myFileReader.buff_reader.readLine();

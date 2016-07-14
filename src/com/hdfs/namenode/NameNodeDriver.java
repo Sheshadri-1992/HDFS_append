@@ -2,6 +2,7 @@ package com.hdfs.namenode;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 //import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -68,6 +69,7 @@ public class NameNodeDriver implements INameNode
 
 		System.out.println("Hello");
 		/**create nnconf file and a directory file has to be created here**/
+		
 		
 		File myFile = new File(Constants.NAME_NODE_CONF_NEW);
 		if(myFile.exists()==false)
@@ -305,6 +307,9 @@ public class NameNodeDriver implements INameNode
 			
 			List<String> blocks = req.getBlockNumsList();
 			
+			System.out.println("Requested blocks "+blocks);
+			
+			
 			List<BlockLocations> locs  = getFile.getBlockLocations(blocks,blockLocations);
 			
 			res.setStatus(Constants.STATUS_SUCCESS);
@@ -427,7 +432,7 @@ public class NameNodeDriver implements INameNode
 			int id = req.getId();
 			DataNodeLocation loc = req.getLocation();
 			
-//			System.out.println("Data node " + req.getBlockNumbersCount());
+			System.out.println("Data node " + req.getBlockNumbersCount());
 			
 			dataNodes.put(id,loc);
 			
@@ -439,7 +444,7 @@ public class NameNodeDriver implements INameNode
 					
 					List<DataNodeLocation> arrLoc = new ArrayList<DataNodeLocation>();
 					arrLoc.add(loc);
-//					System.out.println("Added block "+numBlock);
+					System.out.println("Added block "+numBlock);
 					
 					blockLocations.put(numBlock, arrLoc);
 					
