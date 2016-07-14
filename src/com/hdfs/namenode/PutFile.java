@@ -157,7 +157,7 @@ public class PutFile {
 		StringBuilder sb = new StringBuilder();
 		/**
 		 * File handle maps handle to a filename, the filename has to be appended in the NNConf
-		 * the blocknumbers have to be written line separated into a new file
+		 * the block numbers have to be written line separated into a new file
 		 */
 		String fileName  = fileHandletoFileName.get(handle);
 		fileName += "\n";

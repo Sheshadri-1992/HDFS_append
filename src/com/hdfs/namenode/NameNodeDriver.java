@@ -118,71 +118,71 @@ public class NameNodeDriver implements INameNode
 
 
 	@Override
-	public byte[] openFile(byte[] inp) throws RemoteException {
-		// TODO Auto-generated method stub
-		
-		
-		System.out.println("Open file called");
-		OpenFileResponse.Builder res = OpenFileResponse.newBuilder();
-		res.setStatus(Constants.STATUS_FAILED);
-		
-		OpenFileRequest req;
-		try {
-			req = OpenFileRequest.parseFrom(inp);
-			
-			String fileName = req.getFileName();
-			boolean type = req.getForRead();
-			
-			if(!type)   // type = false then write i.e. put
-			{
-				if(getFile.getFileDetails(fileName)==null)
-				{
-					int fileHandle = new Random().nextInt()%100000;
-					fileHandle = Math.abs(fileHandle);
-					System.out.println(fileHandle);
-				    putFile.insertFileHandle(fileName, fileHandle); //here the filename is written into NNCONF
-				    
-				    res.setHandle(fileHandle);
-				    res.setStatus(Constants.STATUS_SUCCESS);
-				}
-				else
-				{
-					res.setStatus(Constants.STATUS_NOT_FOUND);
-				}
-				
-			   
-				
-				
-			}else       // type = true then read i.e get
-			{
-				String[] blocks = getFile.getFileDetails(fileName);
-				if(blocks==null)
-				{
-					res.setStatus(Constants.STATUS_NOT_FOUND);
-				}else
-				{
-					res.setStatus(Constants.STATUS_SUCCESS);
-					Iterable<String> iterable = Arrays.asList(blocks);
-					res.addAllBlockNums(iterable);
-				}
-				
-				
-			}
-			
-			
-		} catch (InvalidProtocolBufferException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		
-		
-		return res.build().toByteArray();
-	}
+//	public byte[] openFile(byte[] inp) throws RemoteException {
+//		// TODO Auto-generated method stub
+//		
+//		
+//		System.out.println("Open file called");
+//		OpenFileResponse.Builder res = OpenFileResponse.newBuilder();
+//		res.setStatus(Constants.STATUS_FAILED);
+//		
+//		OpenFileRequest req;
+//		try {
+//			req = OpenFileRequest.parseFrom(inp);
+//			
+//			String fileName = req.getFileName();
+//			boolean type = req.getForRead();
+//			
+//			if(!type)   // type = false then write i.e. put
+//			{
+//				if(getFile.getFileDetails(fileName)==null)
+//				{
+//					int fileHandle = new Random().nextInt()%100000;
+//					fileHandle = Math.abs(fileHandle);
+//					System.out.println(fileHandle);
+//				    putFile.insertFileHandle(fileName, fileHandle); //here the filename is written into NNCONF
+//				    
+//				    res.setHandle(fileHandle);
+//				    res.setStatus(Constants.STATUS_SUCCESS);
+//				}
+//				else
+//				{
+//					res.setStatus(Constants.STATUS_NOT_FOUND);
+//				}
+//				
+//			   
+//				
+//				
+//			}else       // type = true then read i.e get
+//			{
+//				String[] blocks = getFile.getFileDetails(fileName);
+//				if(blocks==null)
+//				{
+//					res.setStatus(Constants.STATUS_NOT_FOUND);
+//				}else
+//				{
+//					res.setStatus(Constants.STATUS_SUCCESS);
+//					Iterable<String> iterable = Arrays.asList(blocks);
+//					res.addAllBlockNums(iterable);
+//				}
+//				
+//				
+//			}
+//			
+//			
+//		} catch (InvalidProtocolBufferException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		
+//		
+//		
+//		return res.build().toByteArray();
+//	}
 
 
 
-	@Override
+	
 	public byte[] closeFile(byte[] inp) throws RemoteException {
 		// TODO Auto-generated method stub
 		CloseFileRequest req = null;
@@ -391,6 +391,7 @@ public class NameNodeDriver implements INameNode
 
 
 
+	@SuppressWarnings("null")
 	@Override
 	public byte[] blockReport(byte[] inp) throws RemoteException {
 		// TODO Auto-generated method stub
@@ -610,7 +611,7 @@ public class NameNodeDriver implements INameNode
 	 * Newly added method, this is to test the new file configuration
 	 */
 	@Override
-	public byte[] openFileNew(byte[] inp) throws RemoteException {
+	public byte[] openFile(byte[] inp) throws RemoteException {
 		// TODO Auto-generated method stub
 		System.out.println("Open file new called");
 		OpenFileResponse.Builder res = OpenFileResponse.newBuilder();
@@ -676,6 +677,13 @@ public class NameNodeDriver implements INameNode
 		
 		return res.build().toByteArray();
 
+	}
+	
+	/**
+	 * ignore this
+	 */
+	public byte[] openFileNew(byte[] inp) throws RemoteException {
+		return null;
 	}
 	
 	public byte[] appendMethod(byte[] inp)
