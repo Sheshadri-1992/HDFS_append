@@ -101,6 +101,8 @@ public class NameNodeDriver implements INameNode
 		dataNodes = new HashMap<>();
 		blockLocations = new HashMap<>();
 		heartBeatDataNodes = new HashMap<>();
+		activeBlocksHashMap = new HashMap<>();
+		handleBlockHashMap = new HashMap<>();
 		
 		putFile = new PutFile();
 		getFile = new GetFile();
@@ -270,7 +272,7 @@ public class NameNodeDriver implements INameNode
 			{
 				if(handle != null)
 				{
-					putFile.removeFileHandle(handle);
+					activeBlocksHashMap = putFile.removeFileHandleNew(handle,activeBlocksHashMap);
 					
 				}
 			}
@@ -457,7 +459,7 @@ public class NameNodeDriver implements INameNode
 			}
 			
 			/** now need to use hashmap to  this to send delete blocks **/
-			List<String> deleteBlocks = null;
+			List<String> deleteBlocks = new ArrayList<>();
 			
 			for(int i=0;i<req.getBlockNumbersCount();i++)
 			{
