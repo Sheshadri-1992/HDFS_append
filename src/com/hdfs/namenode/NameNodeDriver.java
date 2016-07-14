@@ -254,7 +254,10 @@ public class NameNodeDriver implements INameNode
 				handleBlockHashMap.remove(handle);
 				
 				/**now finally dissociate the file handle **/
-				putFile.removeFileHandleNew(handle);
+//				putFile.removeFileHandleNew(handle);
+				putFile.fileHandletoFileName.remove(handle);
+				putFile.fileBlocks.remove(handle);
+				
 			}
 			else if(decision==0)//abort, so remove the entry from the active block hashmap
 			{
@@ -268,7 +271,9 @@ public class NameNodeDriver implements INameNode
 				handleBlockHashMap.remove(handle);
 				
 				/**now finally dissociate the file handle **/
-				putFile.removeFileHandleNew(handle);
+//				putFile.removeFileHandleNew(handle);
+				putFile.fileHandletoFileName.remove(handle);
+				putFile.fileBlocks.remove(handle);
 			}
 			else
 			{
@@ -462,6 +467,7 @@ public class NameNodeDriver implements INameNode
 				}
 				
 			}
+			
 			
 			/** now need to use hashmap to  this to send delete blocks **/
 			List<String> deleteBlocks = new ArrayList<>();
@@ -763,7 +769,7 @@ public class NameNodeDriver implements INameNode
 			    /**add block to active map **/
 			    activeBlocksHashMap.put(newBlock, 1);
 			    
-			    updateClockLastBlock(fileName,newBlock);
+			    updateClockLastBlock(newBlock,fileName);
 			    
 			    /** This would give me 12.1**/
 			    String oldBlock = myArray[0];
@@ -925,6 +931,7 @@ public class NameNodeDriver implements INameNode
 	/**This updates the clock of the last block of the file **/
 	public void updateClockLastBlock(String newBlock,String fileName)
 	{
+		System.out.println(fileName);
 		FileReaderClass myFileReader = new FileReaderClass(fileName);
 		myFileReader.openFile();
 		
