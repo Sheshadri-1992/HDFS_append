@@ -1,6 +1,7 @@
 package com.hdfs.namenode;
 
 import java.io.BufferedReader;
+import java.io.File;
 //import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -67,6 +68,26 @@ public class NameNodeDriver implements INameNode
 
 		System.out.println("Hello");
 		/**create nnconf file and a directory file has to be created here**/
+		
+		File myFile = new File(Constants.NAME_NODE_CONF_NEW);
+		if(myFile.exists()==false)
+		{
+			try {
+				myFile.createNewFile();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		myFile = new File("File");
+		if(myFile.exists()==false)
+		{
+			myFile.mkdir();
+		}
+		
+		
+		
 		PopulateBlocks popBlkObj = new PopulateBlocks();
 		/**creates the initial map of all block numbers **/
 		allBlocksHashMap = popBlkObj.returnAllBlocks();
