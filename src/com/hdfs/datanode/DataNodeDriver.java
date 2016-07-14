@@ -42,6 +42,8 @@ import com.hdfs.miscl.Hdfs.HeartBeatRequest;
 import com.hdfs.miscl.Hdfs.HeartBeatResponse;
 import com.hdfs.miscl.Hdfs.ReadBlockRequest;
 import com.hdfs.miscl.Hdfs.ReadBlockResponse;
+import com.hdfs.miscl.Hdfs.ReadBlockSizeRequest;
+import com.hdfs.miscl.Hdfs.ReadBlockSizeResponse;
 import com.hdfs.miscl.Hdfs.WriteBlockRequest;
 import com.hdfs.miscl.Hdfs.WriteBlockResponse;
 import com.hdfs.namenode.INameNode;
@@ -667,13 +669,26 @@ public class DataNodeDriver implements IDataNode {
 	public byte[] readBlockSize(byte[] inp) throws RemoteException {
 		// TODO Auto-generated method stub
 		
+		ReadBlockSizeResponse.Builder response = ReadBlockSizeResponse.newBuilder();
+		response.setStatus(Constants.STATUS_NOT_FOUND);
+		try {
+			ReadBlockSizeRequest req = ReadBlockSizeRequest.parseFrom(inp);
+			
+			String fileName = req.getBlockNumber();
+			
+			File file = new File(fileName);
+			response.setSize(file.length());
+			response.setStatus(Constants.STATUS_SUCCESS);
+			
+		} catch (InvalidProtocolBufferException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
-		String fileName = null;
 		
-		File file = new File(fileName);
 	
 		//return file.length();
-		return null;
+		return response.build().toByteArray();
 	}
 	
 }
