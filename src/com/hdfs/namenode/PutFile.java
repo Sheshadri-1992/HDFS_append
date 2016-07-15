@@ -34,33 +34,33 @@ public class PutFile {
 	 * FileName in a different file
 	 * blocknumbers, new line separated in a different file
 	 */
-	public void removeFileHandle(int handle)
-	{
-		
-		StringBuilder sb = new StringBuilder();
-		/**
-		 * File handle maps handle to a filename, the filename has to written in the NNConf
-		 * the blocknumbers have to be written line separated into a new file
-		 */
-		
-		sb.append(fileHandletoFileName.get(handle));
-		sb.append(":");
-		for(int i=0;i<fileBlocks.get(handle).size();i++)
-		{
-			String block= fileBlocks.get(handle).get(i);
-			
-			sb.append(block.toString());
-			if(i!=fileBlocks.get(handle).size()-1)
-				sb.append(",");
-			
-		}
-		sb.append("\n");
-		
-		writeToConf(sb.toString());
-		
-		fileHandletoFileName.remove(handle);
-		fileBlocks.remove(handle);
-	}
+////	public void removeFileHandle(int handle)
+////	{
+////		
+////		StringBuilder sb = new StringBuilder();
+////		/**
+////		 * File handle maps handle to a filename, the filename has to written in the NNConf
+////		 * the blocknumbers have to be written line separated into a new file
+////		 */
+////		
+////		sb.append(fileHandletoFileName.get(handle));
+////		sb.append(":");
+////		for(int i=0;i<fileBlocks.get(handle).size();i++)
+////		{
+////			String block= fileBlocks.get(handle).get(i);
+////			
+////			sb.append(block.toString());
+////			if(i!=fileBlocks.get(handle).size()-1)
+////				sb.append(",");
+////			
+////		}
+////		sb.append("\n");
+////		
+////		writeToConf(sb.toString());
+////		
+////		fileHandletoFileName.remove(handle);
+////		fileBlocks.remove(handle);
+//	}
 	
 	public void removeFileHandleNew(int handle)
 	{
@@ -153,6 +153,14 @@ public class PutFile {
 	}
 
 	
+	
+	
+	/**
+	 * returns hashmap for allblocks
+	 * @param handle
+	 * @param myHashMap
+	 * @return
+	 */
 	public HashMap<String,Integer> removeFileHandleNew(int handle,HashMap<String,Integer> myHashMap)
 	{
 		StringBuilder sb = new StringBuilder();
@@ -161,7 +169,7 @@ public class PutFile {
 		 * the block numbers have to be written line separated into a new file
 		 */
 		String fileName  = fileHandletoFileName.get(handle);
-//		fileName += "\n";
+		
 		writeToConfNew(fileName);
 		
 		/**
@@ -179,14 +187,34 @@ public class PutFile {
 				sb.append("\n"); //write blocks line by line
 			
 		}
-//		sb.append("\n"); not needed since, the content is written to a different file altogether, it
-		//just introduces a blank line
 		
 		writeFileBlocks(sb.toString(),fileName);
 		
 		fileHandletoFileName.remove(handle);
 		fileBlocks.remove(handle);
 		
+		return myHashMap;
+	}
+	
+	/**
+	 * Updates active block hashmap 
+	 * @param handle
+	 * @param myHashMap
+	 * @return
+	 */
+	public HashMap<String,Integer> updateActiveBlocks(int handle,HashMap<String,Integer> myHashMap)
+	{
+		
+		/**remove entries of all active file blocks **/
+		for(int i=0;i<fileBlocks.get(handle).size();i++)
+		{
+			String block= fileBlocks.get(handle).get(i);
+			String[] blockWithVersion = block.split("\\.",0);
+			System.out.println(blockWithVersion[0]+"."+blockWithVersion[1]);
+			myHashMap.remove(blockWithVersion[0]+"."+blockWithVersion[1]);//this would add a block like 12.1	
+			
+		}
+				
 		return myHashMap;
 	}
 	

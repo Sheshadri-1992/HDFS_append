@@ -220,12 +220,14 @@ public class NameNodeDriver implements INameNode
 		 * -1 - neither abort nor commit
 		 **/
 		
+		
 		try {
 			req = CloseFileRequest.parseFrom(inp);
 			res.setStatus(Constants.STATUS_SUCCESS);
 			
 			Integer handle = req.getHandle();
 			Integer decision = req.getDecision();
+			System.out.println("decision is "+decision);
 			
 			/**commit the changes, the following need to be performed
 			 * 1. discard the old number
@@ -234,14 +236,19 @@ public class NameNodeDriver implements INameNode
 			 */
 			if(decision==1)//commit
 			{
+				System.out.println("its a commit");
 				Vector<String> myBlocks = handleBlockHashMap.get(handle);
 				String oldBlock = myBlocks.get(0);
 				String newBlock = myBlocks.get(1);
+				
+				System.out.println("The old block is "+ oldBlock+" the new block is "+newBlock);
 				
 				String[] clockOfNewBlock = newBlock.split("\\.");
 				
 				allBlocksHashMap.remove(oldBlock);
 				allBlocksHashMap.put(newBlock, 1);// this reflects the append of the file
+				System.out.println("does allblock hashmap contain oldblock? "+(allBlocksHashMap.containsKey(oldBlock)));
+				System.out.println("does allblock hashmap contain newBlock? "+(allBlocksHashMap.containsKey(newBlock)));
 				
 				/**PERSISTANT CHANGE: update the clock of the last block **/
 				String fileName = putFile.fileHandletoFileName.get(handle);	
@@ -251,7 +258,8 @@ public class NameNodeDriver implements INameNode
 				
 				/**remove the entry from the block handle hashmap **/
 				activeBlocksHashMap.remove(newBlock);
-				
+				System.out.println("does activeblock hashmap contain newBlock? "+(activeBlocksHashMap.containsKey(newBlock)));
+
 				/**remove the file handle from the handleHashMap **/
 				handleBlockHashMap.remove(handle);
 				
@@ -281,7 +289,8 @@ public class NameNodeDriver implements INameNode
 			{
 				if(handle != null)
 				{
-					activeBlocksHashMap = putFile.removeFileHandleNew(handle,activeBlocksHashMap);
+					activeBlocksHashMap = putFile.updateActiveBlocks(handle, activeBlocksHashMap);
+					allBlocksHashMap = putFile.removeFileHandleNew(handle,allBlocksHashMap);
 					
 				}
 			}
@@ -439,7 +448,7 @@ public class NameNodeDriver implements INameNode
 			int id = req.getId();
 			DataNodeLocation loc = req.getLocation();
 			
-			System.out.println("Data node " + req.getBlockNumbersCount());
+//			System.out.println("Data node " + req.getBlockNumbersCount());
 			
 			dataNodes.put(id,loc);
 			
@@ -478,16 +487,24 @@ public class NameNodeDriver implements INameNode
 			{
 				String numBlock = req.getBlockNumbers(i);
 				/**check if the block is present in the allblocks hashMap **/
+//				System.out.println("block is "+numBlock);
+//				boolean cond1 =  allBlocksHashMap.containsKey(numBlock);
+//				boolean cond2 =  activeBlocksHashMap.containsKey(numBlock);
+//				System.out.println("block is "+numBlock+" cond1 "+cond1+" cond2 "+cond2);
 				if(allBlocksHashMap.containsKey(numBlock)==false) //then this maybe an incremented block
 				{
 					if(activeBlocksHashMap.containsKey(numBlock)==false)
 					{
 						deleteBlocks.add(numBlock);
+//						System.out.println("the delete block is "+numBlock);
 					}
 				}
 			}
 			
+//			System.out.println("delete blocks list is "+deleteBlocks.toString());
+			
 			res.addAllDeleteBlocks(deleteBlocks);
+			deleteBlocks.clear();
 //			System.out.print(dataNodes.get(id));
 			
 			res.addStatus(Constants.STATUS_SUCCESS);
@@ -771,12 +788,13 @@ public class NameNodeDriver implements INameNode
 			    /**add block to active map **/
 			    activeBlocksHashMap.put(newBlock, 1);
 			    
-			    updateClockLastBlock(newBlock,fileName);
+			    
+			    updateClockLastBlock(myArray[0]+"."+myArray[1]+"."+clock,fileName);
 			    
 			    /** This would give me 12.1**/
 			    String oldBlock = myArray[0];
 			    oldBlock = oldBlock +".";
-			    oldBlock = oldBlock + myArray[myArray.length-1];
+			    oldBlock = oldBlock + myArray[1];
 			    
 			    /**add block to handleBlock hashmap **/
 			    Vector<String> blockVersions = new Vector<>();
@@ -789,6 +807,7 @@ public class NameNodeDriver implements INameNode
 			    /**
 			     * Find locations of the data nodes containing this block
 			     */
+			    System.out.println("The old block is "+oldBlock);
 			    long sizeOfLastBlock = findFileSize(oldBlock);
 			    
 			    

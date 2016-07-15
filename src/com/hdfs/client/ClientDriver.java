@@ -107,11 +107,12 @@ public class ClientDriver {
 		
 		List<String> blockNums = responseObj.getBlockNumsList();
 		String last_blocknum=blockNums.get(0);
-		
+		String newBlockNum = responseObj.getNewBlockNum();		
 		
 		int size=(int) responseObj.getSize();
+		System.out.println("size of the file is "+size);
 		//asssuming size came in bytes
-		int remainsize=(32*1000*1024)-size;
+		int remainsize=(Constants.BLOCK_SIZE)-size;//1,000,000 - 841
 		//
 		//WriteBlockRequest.Builder writeBlockObj = WriteBlockRequest.newBuilder();
 		
@@ -129,7 +130,7 @@ public class ClientDriver {
 		      BufferedReader br = new BufferedReader(new
 		                              InputStreamReader(System.in));
 		      String userInput="";
-		     System.out.println("Enter text to append...");
+		      System.out.println("Enter text to append...");
 		      System.out.println("Enter 'quit' to quit.");
 		      do{
 		        
@@ -137,7 +138,7 @@ public class ClientDriver {
 		         if( userInput.equals("quit"))
 		        	 break;
 		          writer.write(  userInput);
-		          writer.write("\n");
+//		          writer.write("\n");
 		        } while(!userInput.equals("quit"));
 		      
 		      if ( writer != null)
@@ -149,8 +150,14 @@ public class ClientDriver {
 		      
 		      BufferedReader breader = null;
 		      breader = new BufferedReader(new FileReader("test.txt") );
-		      char[] newCharArray = new char[remainsize];
-		      breader.read(newCharArray, 0, remainsize);
+		      File myFile = new File("test.txt");
+		      int bytesToRead = 0;
+		      if(myFile.exists())
+		      {
+		    	  bytesToRead = (int)myFile.length();
+		      }
+		      char[] newCharArray = new char[bytesToRead];
+		      breader.read(newCharArray, 0, bytesToRead);
 		      
 		      byte[] array=new String(newCharArray).getBytes(StandardCharsets.UTF_8);
 		      
@@ -230,6 +237,7 @@ public class ClientDriver {
 				writeBlockObj.setBlockInfo(thisBlock);
 				writeBlockObj.setIsAppend(true);
 				writeBlockObj.setCount(0);
+				writeBlockObj.setNewBlockNum(newBlockNum);
 				byte[] response_write=dataStub.writeBlock(writeBlockObj.build().toByteArray());
 				
 				WriteBlockResponse reswriteobj= WriteBlockResponse.parseFrom(response_write);
