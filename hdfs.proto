@@ -60,6 +60,7 @@ message BlockLocationResponse {
 
 message AssignBlockRequest {
   optional int32 handle = 1; // obtain using call to OpenFile
+  optional bool isAppend = 2;//to indicate it is an append
 }
 
 message AssignBlockResponse {

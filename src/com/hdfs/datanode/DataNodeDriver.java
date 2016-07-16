@@ -20,6 +20,7 @@ import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.rmi.ConnectException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -251,10 +252,11 @@ public class DataNodeDriver implements IDataNode {
 		}
 				
 		
-		Registry registry=LocateRegistry.getRegistry(dataNode.getIp(),dataNode.getPort());
 
-		IDataNode dataStub;
 		try {
+			Registry registry=LocateRegistry.getRegistry(dataNode.getIp(),dataNode.getPort());
+
+			IDataNode dataStub;
 			dataStub = (IDataNode) registry.lookup(Constants.DATA_NODE_ID);
 			
 			WriteBlockRequest.Builder req = WriteBlockRequest.newBuilder();
@@ -276,7 +278,15 @@ public class DataNodeDriver implements IDataNode {
 		} catch (NotBoundException | InvalidProtocolBufferException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} 
+		}
+		catch(ConnectException e)
+		{
+			System.out.println("Connect excpetion caught in Datanode driver class, sendtoNextnode method");
+		}
+		catch(Exception e)
+		{
+			System.out.println("Generic exception in Datanode driver class, sendtoNextnode method");
+		}
 		
 		
 		return writeBlockRequestObj.getCount()+1;

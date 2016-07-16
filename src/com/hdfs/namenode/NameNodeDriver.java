@@ -26,6 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Vector;
+import java.util.logging.FileHandler;
+
+import javax.swing.plaf.SliderUI;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.hdfs.datanode.FileReaderClass;
@@ -142,74 +145,19 @@ public class NameNodeDriver implements INameNode
 
 
 
-	@Override
-//	public byte[] openFile(byte[] inp) throws RemoteException {
-//		// TODO Auto-generated method stub
-//		
-//		
-//		System.out.println("Open file called");
-//		OpenFileResponse.Builder res = OpenFileResponse.newBuilder();
-//		res.setStatus(Constants.STATUS_FAILED);
-//		
-//		OpenFileRequest req;
-//		try {
-//			req = OpenFileRequest.parseFrom(inp);
-//			
-//			String fileName = req.getFileName();
-//			boolean type = req.getForRead();
-//			
-//			if(!type)   // type = false then write i.e. put
-//			{
-//				if(getFile.getFileDetails(fileName)==null)
-//				{
-//					int fileHandle = new Random().nextInt()%100000;
-//					fileHandle = Math.abs(fileHandle);
-//					System.out.println(fileHandle);
-//				    putFile.insertFileHandle(fileName, fileHandle); //here the filename is written into NNCONF
-//				    
-//				    res.setHandle(fileHandle);
-//				    res.setStatus(Constants.STATUS_SUCCESS);
-//				}
-//				else
-//				{
-//					res.setStatus(Constants.STATUS_NOT_FOUND);
-//				}
-//				
-//			   
-//				
-//				
-//			}else       // type = true then read i.e get
-//			{
-//				String[] blocks = getFile.getFileDetails(fileName);
-//				if(blocks==null)
-//				{
-//					res.setStatus(Constants.STATUS_NOT_FOUND);
-//				}else
-//				{
-//					res.setStatus(Constants.STATUS_SUCCESS);
-//					Iterable<String> iterable = Arrays.asList(blocks);
-//					res.addAllBlockNums(iterable);
-//				}
-//				
-//				
-//			}
-//			
-//			
-//		} catch (InvalidProtocolBufferException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		
-//		
-//		
-//		return res.build().toByteArray();
-//	}
-
-
-
+/**
+ * CloseFile 
+ */
 	
 	public byte[] closeFile(byte[] inp) throws RemoteException {
 		// TODO Auto-generated method stub
+//		System.exit(0);
+//		try {
+//			Thread.sleep(10000);
+//		} catch (InterruptedException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		}
 		CloseFileRequest req = null;
 		CloseFileResponse.Builder res = CloseFileResponse.newBuilder();
 		res.setStatus(Constants.STATUS_FAILED);
@@ -247,17 +195,19 @@ public class NameNodeDriver implements INameNode
 				
 				allBlocksHashMap.remove(oldBlock);
 				allBlocksHashMap.put(newBlock, 1);// this reflects the append of the file
-				System.out.println("does allblock hashmap contain oldblock? "+(allBlocksHashMap.containsKey(oldBlock)));
-				System.out.println("does allblock hashmap contain newBlock? "+(allBlocksHashMap.containsKey(newBlock)));
 				
 				/**PERSISTANT CHANGE: update the clock of the last block **/
 				String fileName = putFile.fileHandletoFileName.get(handle);	
 				String clock = newBlock+"."+clockOfNewBlock[1];
-				System.out.println("Final Clock is "+clock);
-				updateClockLastBlock(newBlock+"."+clockOfNewBlock[1], Constants.PREFIX_DIR+fileName);//newclock is 12.9 changes to 12.9.9
+//				System.out.println("Final Clock is "+clock);
+				
+				/**need to send a string of new blocks that will be written into the conf file **/
+				updateOnCommit(handleBlockHashMap.get(handle), Constants.PREFIX_DIR+fileName);//newclock is 12.9 changes to 12.9.9
+//				updateOnCommit(newBlock+"."+clockOfNewBlock[1], Constants.PREFIX_DIR+fileName);//newclock is 12.9 changes to 12.9.9
 				
 				/**remove the entry from the block handle hashmap **/
-				activeBlocksHashMap.remove(newBlock);
+				removeBlocksFromActiveBlocksHashMap(handleBlockHashMap.get(handle)); // handle block contains append blocks with it
+//				activeBlocksHashMap.remove(newBlock);
 				System.out.println("does activeblock hashmap contain newBlock? "+(activeBlocksHashMap.containsKey(newBlock)));
 
 				/**remove the file handle from the handleHashMap **/
@@ -271,11 +221,14 @@ public class NameNodeDriver implements INameNode
 			}
 			else if(decision==0)//abort, so remove the entry from the active block hashmap
 			{
+				System.out.println("its an abort");
+
 				Vector<String> myBlocks = handleBlockHashMap.get(handle);				
 				String newBlock = myBlocks.get(1);
 				
 				/**remove the entry from the block handle hashmap **/
-				activeBlocksHashMap.remove(newBlock);
+				removeBlocksFromActiveBlocksHashMap(handleBlockHashMap.get(handle));// handle block contains append blocks with it
+//				activeBlocksHashMap.remove(newBlock);
 				
 				/**remove the file handle from the handleHashMap **/
 				handleBlockHashMap.remove(handle);
@@ -295,16 +248,10 @@ public class NameNodeDriver implements INameNode
 				}
 			}
 			
-			
-			
-			
 		} catch (InvalidProtocolBufferException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		
-		
 		return res.build().toByteArray();
 	}
 
@@ -362,6 +309,7 @@ public class NameNodeDriver implements INameNode
 			putFile.insertFileBlock(handle, newNumBlock);
 			
 			
+			
 			res.setStatus(Constants.STATUS_SUCCESS);
 			
 			BlockLocations.Builder blocks =  BlockLocations.newBuilder();
@@ -392,6 +340,12 @@ public class NameNodeDriver implements INameNode
 			
 	
 //			System.out.println("Num block "+numBlock);
+			/**check if they are trying to append the block to an existing file**/
+			if(req.getIsAppend()==true)
+			{				
+				handleBlockHashMap.get(handle).add(numBlock+".1");
+				System.out.println("the size of the handleblock hash map is "+handleBlockHashMap.size());
+			}
 			blocks.setBlockNumber(numBlock+".1");//initial version number is 1, therefore 12.1
 			res.setNewBlock(blocks);
 			
@@ -446,6 +400,7 @@ public class NameNodeDriver implements INameNode
 			BlockReportRequest req = BlockReportRequest.parseFrom(inp);
 			
 			int id = req.getId();
+//			System.out.println("Block report from Datanode"+id);
 			DataNodeLocation loc = req.getLocation();
 			
 //			System.out.println("Data node " + req.getBlockNumbersCount());
@@ -487,10 +442,7 @@ public class NameNodeDriver implements INameNode
 			{
 				String numBlock = req.getBlockNumbers(i);
 				/**check if the block is present in the allblocks hashMap **/
-//				System.out.println("block is "+numBlock);
-//				boolean cond1 =  allBlocksHashMap.containsKey(numBlock);
-//				boolean cond2 =  activeBlocksHashMap.containsKey(numBlock);
-//				System.out.println("block is "+numBlock+" cond1 "+cond1+" cond2 "+cond2);
+
 				if(allBlocksHashMap.containsKey(numBlock)==false) //then this maybe an incremented block
 				{
 					if(activeBlocksHashMap.containsKey(numBlock)==false)
@@ -700,11 +652,8 @@ public class NameNodeDriver implements INameNode
 				{
 					res.setStatus(Constants.STATUS_NOT_FOUND);
 				}
-				
-			   
-				
-				
-			}else       // type = true then read i.e get
+			}
+			else       // type = true then read i.e get
 			{
 				String[] blocks = getFile.getFileDetails(fileName);
 				if(blocks==null)
@@ -732,12 +681,7 @@ public class NameNodeDriver implements INameNode
 
 	}
 	
-	/**
-	 * ignore this
-	 */
-	public byte[] openFileNew(byte[] inp) throws RemoteException {
-		return null;
-	}
+
 	
 	public byte[] appendMethod(byte[] inp)
 	{
@@ -804,9 +748,6 @@ public class NameNodeDriver implements INameNode
 			    
 			    
 			    /**Find the size of the file **/
-			    /**
-			     * Find locations of the data nodes containing this block
-			     */
 			    System.out.println("The old block is "+oldBlock);
 			    long sizeOfLastBlock = findFileSize(oldBlock);
 			    
@@ -950,7 +891,7 @@ public class NameNodeDriver implements INameNode
 	}
 	
 	/**This updates the clock of the last block of the file **/
-	public void updateClockLastBlock(String newBlock,String fileName)
+	public void updateClockLastBlock(String newBlock,String fileName)	
 	{
 		System.out.println(fileName);
 		FileReaderClass myFileReader = new FileReaderClass(fileName);
@@ -990,4 +931,70 @@ public class NameNodeDriver implements INameNode
 		}
 			
 	}
+	
+	/**updates the last block of files on commit **/
+	public void updateOnCommit(Vector<String> blocks, String fileName)//newclock is 12.9 changes to 12.9.9
+	{
+		System.out.println(fileName);
+		FileReaderClass myFileReader = new FileReaderClass(fileName);
+		myFileReader.openFile();
+		
+		Vector<String> myString = new Vector<>();
+		try
+		{
+			String line = myFileReader.buff_reader.readLine();
+			
+			while(line!=null)
+			{
+				myString.add(line);
+				line = myFileReader.buff_reader.readLine();
+			}
+			
+			/** now modify the last line and write into the file again**/
+			int lastIndex = myString.size();
+			
+			String newBlock = blocks.get(1);
+			String myNewBlock[] = newBlock.split("\\.");
+			
+			myString.set(lastIndex-1, myNewBlock[0]+"."+myNewBlock[1]+"."+myNewBlock[1]);
+			
+			/**add remaining blocks and zoom into the configuration file**/
+			for(int i=2;i<blocks.size();i++)
+			{
+				newBlock = blocks.get(i);
+				myNewBlock = newBlock.split("\\.");
+				myString.add(myNewBlock[0]+"."+myNewBlock[1]+"."+myNewBlock[1]);
+			}
+			
+			myFileReader.closeFile();
+			
+			FileWriterClass myFileWriter = new FileWriterClass(fileName);
+			myFileWriter.createFile();
+			
+			for (String string : myString) {
+				myFileWriter.writeline(string);
+			}
+			
+			/**here the last line has now been updated to a newer clock**/			
+			myFileWriter.closeFile();
+		}
+		
+		catch(IOException e)
+		{
+			System.out.println("IOException in Namenode,method is updateClock last block");
+		}
+
+	}
+	
+	/**
+	 *Remove all blocks that were active in the active hashmap 
+	 */
+	public static void removeBlocksFromActiveBlocksHashMap(Vector<String> blocks)
+	{
+		for(int i=1;i<blocks.size();i++)// from i =1 since 1 = 0 rep
+		{
+			activeBlocksHashMap.remove(blocks.get(i));
+		}
+	}
 }
+

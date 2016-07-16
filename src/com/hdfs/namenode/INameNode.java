@@ -9,8 +9,6 @@ public interface INameNode extends Remote {
 	/* Method to open a file given file name with read-write flag*/
 	byte[] openFile(byte[] inp) throws RemoteException;
 	
-	/* open file new, this is just for testing new Namenode format*/
-	byte[] openFileNew(byte[] inp) throws RemoteException;
 	
 	/* CloseFileResponse closeFile(CloseFileRequest) */
 	byte[] closeFile(byte[] inp ) throws RemoteException;
