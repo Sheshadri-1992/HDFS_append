@@ -156,6 +156,338 @@ public class ClientDriver {
 		      {
 		    	  bytesToRead = (int)myFile.length();
 		      }
+		      
+		      if(remainsize==0)
+		      {
+		    	  double noOfBlocks = Math.ceil((double)bytesToRead*1.0/(double)Constants.BLOCK_SIZE*1.0);
+	    		  if(noOfBlocks==0)
+	    			  noOfBlocks=1;
+	    		  AssignBlockRequest.Builder assgnBlockReqObj = AssignBlockRequest.newBuilder();
+	    		  FILESIZE= (int)myFile.length();
+	    		  int offset=0;
+					
+	    		  for(int i=0;i<noOfBlocks;i++)
+					{
+	    			  WriteBlockRequest.Builder writeBlockObj = WriteBlockRequest.newBuilder();
+	    			  AssignBlockResponse assignResponseObj ;
+						BlockLocations blkLocation ;
+						List<DataNodeLocation> dataNodeLocations;
+						DataNodeLocation dataNode;
+						/**need to call assign block and write blocks **/
+						
+						assgnBlockReqObj.setHandle(fileHandle);
+						
+						responseArray = nameStub.assignBlock(assgnBlockReqObj.build().toByteArray());
+                          assignResponseObj = AssignBlockResponse.parseFrom(responseArray);
+						
+						status = assignResponseObj.getStatus();
+						if(status==Constants.STATUS_FAILED)
+						{
+							System.out.println("Fatal Error!");
+							System.exit(0);
+						}
+						
+						blkLocation = assignResponseObj.getNewBlock();
+						
+						String blockNumber = blkLocation.getBlockNumber();
+						System.out.println("Block number retured is "+blockNumber);
+                       dataNodeLocations = blkLocation.getLocationsList();
+						
+						dataNode = dataNodeLocations.get(0);
+						Registry registry2=LocateRegistry.getRegistry(dataNode.getIp(),dataNode.getPort());
+
+						System.out.println(dataNode);
+						IDataNode dataStub = (IDataNode) registry2.lookup(Constants.DATA_NODE_ID);
+						byte[] byteArray = read32MBfromFile(offset);
+						offset=offset+(int)Constants.BLOCK_SIZE;
+						
+						writeBlockObj.addData(ByteString.copyFrom(byteArray));
+						writeBlockObj.setBlockInfo(blkLocation);
+						writeBlockObj.setIsAppend(true);
+						writeBlockObj.setCount(0);
+						writeBlockObj.setNewBlockNum(newBlockNum);
+						
+						dataStub.writeBlock(writeBlockObj.build().toByteArray());
+						
+						byte[] response_write=dataStub.writeBlock(writeBlockObj.build().toByteArray());
+						
+						WriteBlockResponse reswriteobj= WriteBlockResponse.parseFrom(response_write);
+						int sucess_count=reswriteobj.getCount();
+						if(sucess_count>=2)
+						{
+							System.out.println("sucess in append");
+
+							CloseFileRequest.Builder closeFileObj = CloseFileRequest.newBuilder();
+							closeFileObj.setHandle(fileHandle);
+							closeFileObj.setDecision(1);
+							
+							byte[] receivedArray = nameStub.closeFile(closeFileObj.build().toByteArray());
+							CloseFileResponse closeResObj = CloseFileResponse.parseFrom(receivedArray);
+							if(closeResObj.getStatus()==Constants.STATUS_FAILED)
+							{
+								System.out.println("Close File response Status Failed");
+								System.exit(0);
+							}
+							//comment
+							//comment
+						}
+						else
+						{
+							CloseFileRequest.Builder closeFileObj = CloseFileRequest.newBuilder();
+							closeFileObj.setHandle(fileHandle);
+							closeFileObj.setDecision(0);
+							
+							byte[] receivedArray = nameStub.closeFile(closeFileObj.build().toByteArray());
+							CloseFileResponse closeResObj = CloseFileResponse.parseFrom(receivedArray);
+							if(closeResObj.getStatus()==Constants.STATUS_FAILED)
+							{
+								System.out.println("Close File response Status Failed");
+								System.exit(0);
+							}
+							
+						}
+
+						
+					}
+	    			  
+	    			  
+	    		  
+		      }
+		      
+		      
+		      
+		      
+		      
+		      
+		      
+		      
+		      
+		      
+		      if((remainsize!=0)&&(remainsize<bytesToRead))
+		      {
+		    	  
+		    	  char[] newCharArray = new char[bytesToRead];
+			      breader.read(newCharArray, 0, bytesToRead);
+			      
+			      byte[] array=new String(newCharArray).getBytes(StandardCharsets.UTF_8);
+			      BlockLocationRequest.Builder blockLocReqObj = BlockLocationRequest.newBuilder();
+					
+					
+					
+					blockLocReqObj.addAllBlockNums(blockNums);
+													
+					try {
+						responseArray = nameStub.getBlockLocations(blockLocReqObj.build().toByteArray());
+					} catch (RemoteException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+					
+					
+					
+					BlockLocationResponse blockLocResObj = BlockLocationResponse.parseFrom(responseArray);
+				
+					if(blockLocResObj.getStatus()==Constants.STATUS_FAILED)
+					{
+						System.out.println("Fatal error!");
+						System.exit(0);
+					}
+					
+					
+					List<BlockLocations> blockLocations =  blockLocResObj.getBlockLocationsList();
+					
+					BlockLocations thisBlock = blockLocations.get(0);
+					String blockNumber = thisBlock.getBlockNumber();
+					List<DataNodeLocation> dataNodes = thisBlock.getLocationsList();
+					
+			      
+					int dataNodeCounter=0;
+					
+					DataNodeLocation thisDataNode = null;					
+					String ip;
+					int port ; 
+					
+					
+					IDataNode dataStub=null;
+					
+					boolean gotDataNodeFlag=false;
+					
+					
+					
+					
+					do
+					{
+						try
+						{
+							thisDataNode = dataNodes.get(dataNodeCounter);
+							ip = thisDataNode.getIp();
+							port = thisDataNode.getPort();
+														
+							Registry registry2=LocateRegistry.getRegistry(ip,port);					
+							dataStub = (IDataNode) registry2.lookup(Constants.DATA_NODE_ID);
+							gotDataNodeFlag=true;
+						}
+						catch (RemoteException e) {
+							
+							gotDataNodeFlag=false;
+//							System.out.println("Remote Exception");
+							dataNodeCounter++;
+						} 
+					}					
+					while(gotDataNodeFlag==false && dataNodeCounter<dataNodes.size());
+					
+					
+					if(dataNodeCounter == dataNodes.size())
+					{
+						System.out.println("All data nodes are down :( ");
+						System.exit(0);
+					}
+					WriteBlockRequest.Builder writeBlockObj = WriteBlockRequest.newBuilder();
+					writeBlockObj.addData(ByteString.copyFrom(array));
+					writeBlockObj.setBlockInfo(thisBlock);
+					writeBlockObj.setIsAppend(true);
+					writeBlockObj.setCount(0);
+					writeBlockObj.setNewBlockNum(newBlockNum);
+					byte[] response_write=dataStub.writeBlock(writeBlockObj.build().toByteArray());
+					
+					WriteBlockResponse reswriteobj= WriteBlockResponse.parseFrom(response_write);
+					int sucess_count=reswriteobj.getCount();
+					if(sucess_count>=2)
+					{
+						System.out.println("sucess in append");
+
+						CloseFileRequest.Builder closeFileObj = CloseFileRequest.newBuilder();
+						closeFileObj.setHandle(fileHandle);
+						closeFileObj.setDecision(1);
+						
+						byte[] receivedArray = nameStub.closeFile(closeFileObj.build().toByteArray());
+						CloseFileResponse closeResObj = CloseFileResponse.parseFrom(receivedArray);
+						if(closeResObj.getStatus()==Constants.STATUS_FAILED)
+						{
+							System.out.println("Close File response Status Failed");
+							System.exit(0);
+						}
+						//comment
+						//comment
+					}
+					else
+					{
+						CloseFileRequest.Builder closeFileObj = CloseFileRequest.newBuilder();
+						closeFileObj.setHandle(fileHandle);
+						closeFileObj.setDecision(0);
+						
+						byte[] receivedArray = nameStub.closeFile(closeFileObj.build().toByteArray());
+						CloseFileResponse closeResObj = CloseFileResponse.parseFrom(receivedArray);
+						if(closeResObj.getStatus()==Constants.STATUS_FAILED)
+						{
+							System.out.println("Close File response Status Failed");
+							System.exit(0);
+						}
+						
+					}
+					
+					
+					 double noOfBlocks = Math.ceil((double)(bytesToRead-remainsize)*1.0/(double)Constants.BLOCK_SIZE*1.0);
+		    		  if(noOfBlocks==0)
+		    			  noOfBlocks=1;
+		    		  AssignBlockRequest.Builder assgnBlockReqObj = AssignBlockRequest.newBuilder();
+		    		  FILESIZE= (int)myFile.length();
+		    		  int offset=remainsize;
+						
+		    		  for(int i=0;i<noOfBlocks;i++)
+						{
+		    			  writeBlockObj = WriteBlockRequest.newBuilder();
+		    			  AssignBlockResponse assignResponseObj ;
+							BlockLocations blkLocation ;
+							List<DataNodeLocation> dataNodeLocations;
+							DataNodeLocation dataNode;
+							/**need to call assign block and write blocks **/
+							
+							assgnBlockReqObj.setHandle(fileHandle);
+							
+							responseArray = nameStub.assignBlock(assgnBlockReqObj.build().toByteArray());
+	                          assignResponseObj = AssignBlockResponse.parseFrom(responseArray);
+							
+							status = assignResponseObj.getStatus();
+							if(status==Constants.STATUS_FAILED)
+							{
+								System.out.println("Fatal Error!");
+								System.exit(0);
+							}
+							
+							blkLocation = assignResponseObj.getNewBlock();
+							
+							blockNumber = blkLocation.getBlockNumber();
+							System.out.println("Block number retured is "+blockNumber);
+	                       dataNodeLocations = blkLocation.getLocationsList();
+							
+							dataNode = dataNodeLocations.get(0);
+							Registry registry2=LocateRegistry.getRegistry(dataNode.getIp(),dataNode.getPort());
+
+							System.out.println(dataNode);
+						        dataStub = (IDataNode) registry2.lookup(Constants.DATA_NODE_ID);
+							byte[] byteArray = read32MBfromFile(offset);
+							offset=offset+(int)Constants.BLOCK_SIZE;
+							
+							writeBlockObj.addData(ByteString.copyFrom(byteArray));
+							writeBlockObj.setBlockInfo(blkLocation);
+							writeBlockObj.setIsAppend(true);
+							writeBlockObj.setCount(0);
+							writeBlockObj.setNewBlockNum(newBlockNum);
+							
+							dataStub.writeBlock(writeBlockObj.build().toByteArray());
+							
+							response_write=dataStub.writeBlock(writeBlockObj.build().toByteArray());
+							
+							 reswriteobj= WriteBlockResponse.parseFrom(response_write);
+						      sucess_count=reswriteobj.getCount();
+							if(sucess_count>=2)
+							{
+								System.out.println("sucess in append");
+
+								CloseFileRequest.Builder closeFileObj = CloseFileRequest.newBuilder();
+								closeFileObj.setHandle(fileHandle);
+								closeFileObj.setDecision(1);
+								
+								byte[] receivedArray = nameStub.closeFile(closeFileObj.build().toByteArray());
+								CloseFileResponse closeResObj = CloseFileResponse.parseFrom(receivedArray);
+								if(closeResObj.getStatus()==Constants.STATUS_FAILED)
+								{
+									System.out.println("Close File response Status Failed");
+									System.exit(0);
+								}
+								//comment
+								//comment
+							}
+							else
+							{
+								CloseFileRequest.Builder closeFileObj = CloseFileRequest.newBuilder();
+								closeFileObj.setHandle(fileHandle);
+								closeFileObj.setDecision(0);
+								
+								byte[] receivedArray = nameStub.closeFile(closeFileObj.build().toByteArray());
+								CloseFileResponse closeResObj = CloseFileResponse.parseFrom(receivedArray);
+								if(closeResObj.getStatus()==Constants.STATUS_FAILED)
+								{
+									System.out.println("Close File response Status Failed");
+									System.exit(0);
+								}
+								
+							}
+
+							
+						}
+		    	  
+		    	  
+		      }
+		      
+		      
+		      
+		      
+		      
+		      
+		      if((remainsize!=0)&&(remainsize>bytesToRead))
+		      {
 		      char[] newCharArray = new char[bytesToRead];
 		      breader.read(newCharArray, 0, bytesToRead);
 		      
@@ -275,6 +607,7 @@ public class ClientDriver {
 					}
 					
 				}
+		      }
 				
 		      
 		  }
