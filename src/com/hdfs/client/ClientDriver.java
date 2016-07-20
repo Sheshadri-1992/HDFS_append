@@ -172,6 +172,7 @@ public class ClientDriver {
 		 * 1. prepare a write block request, for that get block locations 
 		 */
 		
+		System.out.println("Callin case 3");
 		try
 		{
 			WriteBlockRequest.Builder writeReqObj = WriteBlockRequest.newBuilder();
@@ -180,7 +181,7 @@ public class ClientDriver {
 			//block locations object need to send request on the new block
 			BlockLocationRequest.Builder blockReqObj = BlockLocationRequest.newBuilder();
 			List<String> myBlocks = new ArrayList<String>();
-			myBlocks.add(resObj.getNewBlockNum());
+			myBlocks.add(resObj.getBlockNums(0));
 			blockReqObj.addAllBlockNums(myBlocks);
 			Registry registry = LocateRegistry.getRegistry(Constants.NAME_NODE_IP,Registry.REGISTRY_PORT);
 			INameNode nameStub = (INameNode) registry.lookup(Constants.NAME_NODE);
@@ -268,14 +269,22 @@ public class ClientDriver {
 			
 			int amountBytesRemaining = totalBytes - initialRead;
 			
-			sendRemainingBytesAppend(resObj,amountBytesRemaining,nameStub,dataStub,initialRead,in);
+			sendRemainingBytesAppend(resObj,amountBytesRemaining,nameStub,initialRead,in);
 			
 			in.close();//close the file
+			
+			CloseFileRequest.Builder closeFileObj = CloseFileRequest.newBuilder();
+			closeFileObj.setDecision(1);//abort
+			closeFileObj.setHandle(resObj.getHandle()); //handle
+			nameStub.closeFile(closeFileObj.build().toByteArray());
 		}
 		catch(Exception e)
 		{
+			e.printStackTrace();
 			System.out.println("Whats up exception caught!");
 		}
+		
+		
 				
 	}
 
@@ -283,9 +292,12 @@ public class ClientDriver {
 
 	/**method to send remaining bytes as one by one in blocks**/
 	private static void sendRemainingBytesAppend(OpenFileResponse resObj, int amountBytesRemaining, INameNode nameStub,
-			IDataNode dataStub,int initialRead,InputStream in) {
+			int initialRead,InputStream in) {
 		// TODO Auto-generated method stub
 		int skip = initialRead;
+		
+		System.out.println("Sending new block");
+		
 		while(amountBytesRemaining>0)
 		{
 			AssignBlockRequest.Builder assgnBlk = AssignBlockRequest.newBuilder();
@@ -296,14 +308,58 @@ public class ClientDriver {
 			try {
 				
 				assignResponse = nameStub.assignBlock(assgnBlk.build().toByteArray());
-				AssignBlockResponse assgnResponse = AssignBlockResponse.parseFrom(assignResponse);			
-				
+				AssignBlockResponse assgnResponse = AssignBlockResponse.parseFrom(assignResponse);	
 				
 				if(assgnResponse.getStatus()!=Constants.STATUS_FAILED)
 				{
 					/** we get the new block number **/
 					System.out.println("new block returned from NN");
 				}
+				
+				BlockLocations thisBlock =  assgnResponse.getNewBlock();			
+				 //get the location of the block that we are about to append			
+				List<DataNodeLocation> dataNodes = thisBlock.getLocationsList();//location of all data nodes that contain this block
+				
+				int dataNodeCounter=0;			
+				DataNodeLocation thisDataNode = null;				
+				String ip;
+				int port ; 
+				
+				IDataNode dataStub=null;
+				
+				boolean gotDataNodeFlag=false;
+				do
+				{
+					try
+					{
+						thisDataNode = dataNodes.get(dataNodeCounter);
+						ip = thisDataNode.getIp();
+						port = thisDataNode.getPort();
+													
+						Registry registry2=LocateRegistry.getRegistry(ip,port);					
+						dataStub = (IDataNode) registry2.lookup(Constants.DATA_NODE_ID);
+						gotDataNodeFlag=true;
+					}
+					catch (RemoteException e) {
+						
+						gotDataNodeFlag=false;
+//							System.out.println("Remote Exception");
+						dataNodeCounter++;
+					} catch (NotBoundException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} 
+				}					
+				while(gotDataNodeFlag==false && dataNodeCounter<dataNodes.size());
+				
+				
+				if(dataNodeCounter == dataNodes.size())
+				{
+					System.out.println("All data nodes are down :( ");
+					System.exit(0);
+				}
+				
+				
 				int sendBytes = 0;
 				if(amountBytesRemaining<Constants.BLOCK_SIZE)
 				{
@@ -317,18 +373,19 @@ public class ClientDriver {
 				}
 				
 				byte[] data = new byte[sendBytes];
-				in.skip(skip);
+				//in.skip(skip);
 				in.read(data, 0, sendBytes);
 				
 				WriteBlockRequest.Builder writeBlkReq = WriteBlockRequest.newBuilder();
 				writeBlkReq.setCount(0);
 				writeBlkReq.setIsAppend(false);
 				writeBlkReq.setNewBlockNum("-1");
-				writeBlkReq.setBlockInfo(assgnResponse.getNewBlock());
+				writeBlkReq.setBlockInfo(thisBlock);
 				writeBlkReq.addData(ByteString.copyFrom(data));
+				
 				dataStub.writeBlock(writeBlkReq.build().toByteArray());
 				
-				skip = skip + sendBytes;
+			//	skip = skip + sendBytes;
 			} catch (RemoteException | InvalidProtocolBufferException e) {
 				// TODO Auto-generated catch block
 				System.out.println("exception in send remaining bytes");
