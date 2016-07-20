@@ -206,7 +206,9 @@ public class NameNodeDriver implements INameNode
 //				updateOnCommit(newBlock+"."+clockOfNewBlock[1], Constants.PREFIX_DIR+fileName);//newclock is 12.9 changes to 12.9.9
 				
 				/**remove the entry from the block handle hashmap **/
+				addBlocksToallBlocksHashMap(handleBlockHashMap.get(handle));
 				removeBlocksFromActiveBlocksHashMap(handleBlockHashMap.get(handle)); // handle block contains append blocks with it
+				
 //				activeBlocksHashMap.remove(newBlock);
 				System.out.println("does activeblock hashmap contain newBlock? "+(activeBlocksHashMap.containsKey(newBlock)));
 
@@ -253,6 +255,20 @@ public class NameNodeDriver implements INameNode
 			e.printStackTrace();
 		}
 		return res.build().toByteArray();
+	}
+
+
+
+	/**
+	 * add all the blocks which were appeneded in the all blocks hash map
+	 * @param blocks
+	 */
+	private void addBlocksToallBlocksHashMap(Vector<String> blocks) {
+	// TODO Auto-generated method stub
+		for(int i=1;i<blocks.size();i++)// from i =1 since 1 = 0 rep
+		{
+			allBlocksHashMap.put(blocks.get(i),1);
+		}
 	}
 
 
