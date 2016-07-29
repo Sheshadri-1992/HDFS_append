@@ -11134,29 +11134,29 @@ public final class Hdfs {
         getDeleteBlocksBytes(int index);
 
     /**
-     * <code>optional .DataNodeLocation location = 3;</code>
+     * <code>optional .BlockLocations blockInfo = 3;</code>
      *
      * <pre>
      * This is to retrieve blocks from other data nodes 
      * </pre>
      */
-    boolean hasLocation();
+    boolean hasBlockInfo();
     /**
-     * <code>optional .DataNodeLocation location = 3;</code>
+     * <code>optional .BlockLocations blockInfo = 3;</code>
      *
      * <pre>
      * This is to retrieve blocks from other data nodes 
      * </pre>
      */
-    Hdfs.DataNodeLocation getLocation();
+    Hdfs.BlockLocations getBlockInfo();
     /**
-     * <code>optional .DataNodeLocation location = 3;</code>
+     * <code>optional .BlockLocations blockInfo = 3;</code>
      *
      * <pre>
      * This is to retrieve blocks from other data nodes 
      * </pre>
      */
-    Hdfs.DataNodeLocationOrBuilder getLocationOrBuilder();
+    Hdfs.BlockLocationsOrBuilder getBlockInfoOrBuilder();
   }
   /**
    * Protobuf type {@code BlockReportResponse}
@@ -11232,14 +11232,14 @@ public final class Hdfs {
               break;
             }
             case 26: {
-              Hdfs.DataNodeLocation.Builder subBuilder = null;
+              Hdfs.BlockLocations.Builder subBuilder = null;
               if (((bitField0_ & 0x00000001) == 0x00000001)) {
-                subBuilder = location_.toBuilder();
+                subBuilder = blockInfo_.toBuilder();
               }
-              location_ = input.readMessage(Hdfs.DataNodeLocation.parser(), extensionRegistry);
+              blockInfo_ = input.readMessage(Hdfs.BlockLocations.parser(), extensionRegistry);
               if (subBuilder != null) {
-                subBuilder.mergeFrom(location_);
-                location_ = subBuilder.buildPartial();
+                subBuilder.mergeFrom(blockInfo_);
+                blockInfo_ = subBuilder.buildPartial();
               }
               bitField0_ |= 0x00000001;
               break;
@@ -11343,37 +11343,37 @@ public final class Hdfs {
       return deleteBlocks_.getByteString(index);
     }
 
-    public static final int LOCATION_FIELD_NUMBER = 3;
-    private Hdfs.DataNodeLocation location_;
+    public static final int BLOCKINFO_FIELD_NUMBER = 3;
+    private Hdfs.BlockLocations blockInfo_;
     /**
-     * <code>optional .DataNodeLocation location = 3;</code>
+     * <code>optional .BlockLocations blockInfo = 3;</code>
      *
      * <pre>
      * This is to retrieve blocks from other data nodes 
      * </pre>
      */
-    public boolean hasLocation() {
+    public boolean hasBlockInfo() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
     /**
-     * <code>optional .DataNodeLocation location = 3;</code>
+     * <code>optional .BlockLocations blockInfo = 3;</code>
      *
      * <pre>
      * This is to retrieve blocks from other data nodes 
      * </pre>
      */
-    public Hdfs.DataNodeLocation getLocation() {
-      return location_ == null ? Hdfs.DataNodeLocation.getDefaultInstance() : location_;
+    public Hdfs.BlockLocations getBlockInfo() {
+      return blockInfo_ == null ? Hdfs.BlockLocations.getDefaultInstance() : blockInfo_;
     }
     /**
-     * <code>optional .DataNodeLocation location = 3;</code>
+     * <code>optional .BlockLocations blockInfo = 3;</code>
      *
      * <pre>
      * This is to retrieve blocks from other data nodes 
      * </pre>
      */
-    public Hdfs.DataNodeLocationOrBuilder getLocationOrBuilder() {
-      return location_ == null ? Hdfs.DataNodeLocation.getDefaultInstance() : location_;
+    public Hdfs.BlockLocationsOrBuilder getBlockInfoOrBuilder() {
+      return blockInfo_ == null ? Hdfs.BlockLocations.getDefaultInstance() : blockInfo_;
     }
 
     private byte memoizedIsInitialized = -1;
@@ -11395,7 +11395,7 @@ public final class Hdfs {
         com.google.protobuf.GeneratedMessage.writeString(output, 2, deleteBlocks_.getRaw(i));
       }
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeMessage(3, getLocation());
+        output.writeMessage(3, getBlockInfo());
       }
       unknownFields.writeTo(output);
     }
@@ -11424,7 +11424,7 @@ public final class Hdfs {
       }
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(3, getLocation());
+          .computeMessageSize(3, getBlockInfo());
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -11534,7 +11534,7 @@ public final class Hdfs {
       }
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-          getLocationFieldBuilder();
+          getBlockInfoFieldBuilder();
         }
       }
       public Builder clear() {
@@ -11543,10 +11543,10 @@ public final class Hdfs {
         bitField0_ = (bitField0_ & ~0x00000001);
         deleteBlocks_ = com.google.protobuf.LazyStringArrayList.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000002);
-        if (locationBuilder_ == null) {
-          location_ = null;
+        if (blockInfoBuilder_ == null) {
+          blockInfo_ = null;
         } else {
-          locationBuilder_.clear();
+          blockInfoBuilder_.clear();
         }
         bitField0_ = (bitField0_ & ~0x00000004);
         return this;
@@ -11586,10 +11586,10 @@ public final class Hdfs {
         if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
           to_bitField0_ |= 0x00000001;
         }
-        if (locationBuilder_ == null) {
-          result.location_ = location_;
+        if (blockInfoBuilder_ == null) {
+          result.blockInfo_ = blockInfo_;
         } else {
-          result.location_ = locationBuilder_.build();
+          result.blockInfo_ = blockInfoBuilder_.build();
         }
         result.bitField0_ = to_bitField0_;
         onBuilt();
@@ -11627,8 +11627,8 @@ public final class Hdfs {
           }
           onChanged();
         }
-        if (other.hasLocation()) {
-          mergeLocation(other.getLocation());
+        if (other.hasBlockInfo()) {
+          mergeBlockInfo(other.getBlockInfo());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -11853,158 +11853,158 @@ public final class Hdfs {
         return this;
       }
 
-      private Hdfs.DataNodeLocation location_ = null;
+      private Hdfs.BlockLocations blockInfo_ = null;
       private com.google.protobuf.SingleFieldBuilder<
-          Hdfs.DataNodeLocation, Hdfs.DataNodeLocation.Builder, Hdfs.DataNodeLocationOrBuilder> locationBuilder_;
+          Hdfs.BlockLocations, Hdfs.BlockLocations.Builder, Hdfs.BlockLocationsOrBuilder> blockInfoBuilder_;
       /**
-       * <code>optional .DataNodeLocation location = 3;</code>
+       * <code>optional .BlockLocations blockInfo = 3;</code>
        *
        * <pre>
        * This is to retrieve blocks from other data nodes 
        * </pre>
        */
-      public boolean hasLocation() {
+      public boolean hasBlockInfo() {
         return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       /**
-       * <code>optional .DataNodeLocation location = 3;</code>
+       * <code>optional .BlockLocations blockInfo = 3;</code>
        *
        * <pre>
        * This is to retrieve blocks from other data nodes 
        * </pre>
        */
-      public Hdfs.DataNodeLocation getLocation() {
-        if (locationBuilder_ == null) {
-          return location_ == null ? Hdfs.DataNodeLocation.getDefaultInstance() : location_;
+      public Hdfs.BlockLocations getBlockInfo() {
+        if (blockInfoBuilder_ == null) {
+          return blockInfo_ == null ? Hdfs.BlockLocations.getDefaultInstance() : blockInfo_;
         } else {
-          return locationBuilder_.getMessage();
+          return blockInfoBuilder_.getMessage();
         }
       }
       /**
-       * <code>optional .DataNodeLocation location = 3;</code>
+       * <code>optional .BlockLocations blockInfo = 3;</code>
        *
        * <pre>
        * This is to retrieve blocks from other data nodes 
        * </pre>
        */
-      public Builder setLocation(Hdfs.DataNodeLocation value) {
-        if (locationBuilder_ == null) {
+      public Builder setBlockInfo(Hdfs.BlockLocations value) {
+        if (blockInfoBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
           }
-          location_ = value;
+          blockInfo_ = value;
           onChanged();
         } else {
-          locationBuilder_.setMessage(value);
+          blockInfoBuilder_.setMessage(value);
         }
         bitField0_ |= 0x00000004;
         return this;
       }
       /**
-       * <code>optional .DataNodeLocation location = 3;</code>
+       * <code>optional .BlockLocations blockInfo = 3;</code>
        *
        * <pre>
        * This is to retrieve blocks from other data nodes 
        * </pre>
        */
-      public Builder setLocation(
-          Hdfs.DataNodeLocation.Builder builderForValue) {
-        if (locationBuilder_ == null) {
-          location_ = builderForValue.build();
+      public Builder setBlockInfo(
+          Hdfs.BlockLocations.Builder builderForValue) {
+        if (blockInfoBuilder_ == null) {
+          blockInfo_ = builderForValue.build();
           onChanged();
         } else {
-          locationBuilder_.setMessage(builderForValue.build());
+          blockInfoBuilder_.setMessage(builderForValue.build());
         }
         bitField0_ |= 0x00000004;
         return this;
       }
       /**
-       * <code>optional .DataNodeLocation location = 3;</code>
+       * <code>optional .BlockLocations blockInfo = 3;</code>
        *
        * <pre>
        * This is to retrieve blocks from other data nodes 
        * </pre>
        */
-      public Builder mergeLocation(Hdfs.DataNodeLocation value) {
-        if (locationBuilder_ == null) {
+      public Builder mergeBlockInfo(Hdfs.BlockLocations value) {
+        if (blockInfoBuilder_ == null) {
           if (((bitField0_ & 0x00000004) == 0x00000004) &&
-              location_ != null &&
-              location_ != Hdfs.DataNodeLocation.getDefaultInstance()) {
-            location_ =
-              Hdfs.DataNodeLocation.newBuilder(location_).mergeFrom(value).buildPartial();
+              blockInfo_ != null &&
+              blockInfo_ != Hdfs.BlockLocations.getDefaultInstance()) {
+            blockInfo_ =
+              Hdfs.BlockLocations.newBuilder(blockInfo_).mergeFrom(value).buildPartial();
           } else {
-            location_ = value;
+            blockInfo_ = value;
           }
           onChanged();
         } else {
-          locationBuilder_.mergeFrom(value);
+          blockInfoBuilder_.mergeFrom(value);
         }
         bitField0_ |= 0x00000004;
         return this;
       }
       /**
-       * <code>optional .DataNodeLocation location = 3;</code>
+       * <code>optional .BlockLocations blockInfo = 3;</code>
        *
        * <pre>
        * This is to retrieve blocks from other data nodes 
        * </pre>
        */
-      public Builder clearLocation() {
-        if (locationBuilder_ == null) {
-          location_ = null;
+      public Builder clearBlockInfo() {
+        if (blockInfoBuilder_ == null) {
+          blockInfo_ = null;
           onChanged();
         } else {
-          locationBuilder_.clear();
+          blockInfoBuilder_.clear();
         }
         bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
       /**
-       * <code>optional .DataNodeLocation location = 3;</code>
+       * <code>optional .BlockLocations blockInfo = 3;</code>
        *
        * <pre>
        * This is to retrieve blocks from other data nodes 
        * </pre>
        */
-      public Hdfs.DataNodeLocation.Builder getLocationBuilder() {
+      public Hdfs.BlockLocations.Builder getBlockInfoBuilder() {
         bitField0_ |= 0x00000004;
         onChanged();
-        return getLocationFieldBuilder().getBuilder();
+        return getBlockInfoFieldBuilder().getBuilder();
       }
       /**
-       * <code>optional .DataNodeLocation location = 3;</code>
+       * <code>optional .BlockLocations blockInfo = 3;</code>
        *
        * <pre>
        * This is to retrieve blocks from other data nodes 
        * </pre>
        */
-      public Hdfs.DataNodeLocationOrBuilder getLocationOrBuilder() {
-        if (locationBuilder_ != null) {
-          return locationBuilder_.getMessageOrBuilder();
+      public Hdfs.BlockLocationsOrBuilder getBlockInfoOrBuilder() {
+        if (blockInfoBuilder_ != null) {
+          return blockInfoBuilder_.getMessageOrBuilder();
         } else {
-          return location_ == null ?
-              Hdfs.DataNodeLocation.getDefaultInstance() : location_;
+          return blockInfo_ == null ?
+              Hdfs.BlockLocations.getDefaultInstance() : blockInfo_;
         }
       }
       /**
-       * <code>optional .DataNodeLocation location = 3;</code>
+       * <code>optional .BlockLocations blockInfo = 3;</code>
        *
        * <pre>
        * This is to retrieve blocks from other data nodes 
        * </pre>
        */
       private com.google.protobuf.SingleFieldBuilder<
-          Hdfs.DataNodeLocation, Hdfs.DataNodeLocation.Builder, Hdfs.DataNodeLocationOrBuilder> 
-          getLocationFieldBuilder() {
-        if (locationBuilder_ == null) {
-          locationBuilder_ = new com.google.protobuf.SingleFieldBuilder<
-              Hdfs.DataNodeLocation, Hdfs.DataNodeLocation.Builder, Hdfs.DataNodeLocationOrBuilder>(
-                  getLocation(),
+          Hdfs.BlockLocations, Hdfs.BlockLocations.Builder, Hdfs.BlockLocationsOrBuilder> 
+          getBlockInfoFieldBuilder() {
+        if (blockInfoBuilder_ == null) {
+          blockInfoBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              Hdfs.BlockLocations, Hdfs.BlockLocations.Builder, Hdfs.BlockLocationsOrBuilder>(
+                  getBlockInfo(),
                   getParentForChildren(),
                   isClean());
-          location_ = null;
+          blockInfo_ = null;
         }
-        return locationBuilder_;
+        return blockInfoBuilder_;
       }
 
       // @@protoc_insertion_point(builder_scope:BlockReportResponse)
@@ -13948,14 +13948,14 @@ public final class Hdfs {
       "umber\030\001 \001(\t\"1\n\021ReadBlockResponse\022\016\n\006stat" +
       "us\030\001 \001(\005\022\014\n\004data\030\002 \003(\014\"[\n\022BlockReportReq" +
       "uest\022\n\n\002id\030\001 \001(\005\022#\n\010location\030\002 \001(\0132\021.Dat" +
-      "aNodeLocation\022\024\n\014blockNumbers\030\003 \003(\t\"`\n\023B" +
+      "aNodeLocation\022\024\n\014blockNumbers\030\003 \003(\t\"_\n\023B" +
       "lockReportResponse\022\016\n\006status\030\001 \003(\005\022\024\n\014de" +
-      "leteBlocks\030\002 \003(\t\022#\n\010location\030\003 \001(\0132\021.Dat",
-      "aNodeLocation\"\036\n\020HeartBeatRequest\022\n\n\002id\030" +
-      "\001 \001(\005\"#\n\021HeartBeatResponse\022\016\n\006status\030\001 \001" +
-      "(\005\"+\n\024ReadBlockSizeRequest\022\023\n\013blockNumbe" +
-      "r\030\001 \001(\t\"5\n\025ReadBlockSizeResponse\022\016\n\006stat" +
-      "us\030\001 \001(\005\022\014\n\004size\030\002 \001(\003"
+      "leteBlocks\030\002 \003(\t\022\"\n\tblockInfo\030\003 \001(\0132\017.Bl",
+      "ockLocations\"\036\n\020HeartBeatRequest\022\n\n\002id\030\001" +
+      " \001(\005\"#\n\021HeartBeatResponse\022\016\n\006status\030\001 \001(" +
+      "\005\"+\n\024ReadBlockSizeRequest\022\023\n\013blockNumber" +
+      "\030\001 \001(\t\"5\n\025ReadBlockSizeResponse\022\016\n\006statu" +
+      "s\030\001 \001(\005\022\014\n\004size\030\002 \001(\003"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -14076,7 +14076,7 @@ public final class Hdfs {
     internal_static_BlockReportResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_BlockReportResponse_descriptor,
-        new java.lang.String[] { "Status", "DeleteBlocks", "Location", });
+        new java.lang.String[] { "Status", "DeleteBlocks", "BlockInfo", });
     internal_static_HeartBeatRequest_descriptor =
       getDescriptor().getMessageTypes().get(18);
     internal_static_HeartBeatRequest_fieldAccessorTable = new
