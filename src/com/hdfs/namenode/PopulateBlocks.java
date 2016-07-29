@@ -66,7 +66,7 @@ public class PopulateBlocks {
 			while(line!=null)
 			{
 				String[] blockWithVersion = line.split("\\.");
-				allBlocksHashMap.put(blockWithVersion[0]+"."+blockWithVersion[1], 1);
+				allBlocksHashMap.put(blockWithVersion[0], Integer.valueOf(blockWithVersion[1]));//changed 12->1
 				line = myFileReader.buff_reader.readLine();
 			}		
 		

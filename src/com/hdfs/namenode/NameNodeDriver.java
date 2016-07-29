@@ -151,13 +151,7 @@ public class NameNodeDriver implements INameNode
 	
 	public byte[] closeFile(byte[] inp) throws RemoteException {
 		// TODO Auto-generated method stub
-//		System.exit(0);
-//		try {
-//			Thread.sleep(10000);
-//		} catch (InterruptedException e1) {
-//			// TODO Auto-generated catch block
-//			e1.printStackTrace();
-//		}
+
 		CloseFileRequest req = null;
 		CloseFileResponse.Builder res = CloseFileResponse.newBuilder();
 		res.setStatus(Constants.STATUS_FAILED);
@@ -193,30 +187,31 @@ public class NameNodeDriver implements INameNode
 				
 				String[] clockOfNewBlock = newBlock.split("\\.");
 				
-				allBlocksHashMap.remove(oldBlock);
-				allBlocksHashMap.put(newBlock, 1);// this reflects the append of the file
+				allBlocksHashMap.remove(oldBlock.split("\\.",0)[0]);
+				String[] myArray = newBlock.split("\\.",0);
+				allBlocksHashMap.put(myArray[0], Integer.valueOf(myArray[1]));// this reflects the append of the file
 				
 				/**PERSISTANT CHANGE: update the clock of the last block **/
-				String fileName = putFile.fileHandletoFileName.get(handle);	
-				String clock = newBlock+"."+clockOfNewBlock[1];
-//				System.out.println("Final Clock is "+clock);
+				String fileName = putFile.fileHandletoFileName.get(handle);
+				
+				
 				
 				/**need to send a string of new blocks that will be written into the conf file **/
 				updateOnCommit(handleBlockHashMap.get(handle), Constants.PREFIX_DIR+fileName);//newclock is 12.9 changes to 12.9.9
-//				updateOnCommit(newBlock+"."+clockOfNewBlock[1], Constants.PREFIX_DIR+fileName);//newclock is 12.9 changes to 12.9.9
+				
 				
 				/**remove the entry from the block handle hashmap **/
 				addBlocksToallBlocksHashMap(handleBlockHashMap.get(handle));
 				removeBlocksFromActiveBlocksHashMap(handleBlockHashMap.get(handle)); // handle block contains append blocks with it
 				
-//				activeBlocksHashMap.remove(newBlock);
+				
 				System.out.println("does activeblock hashmap contain newBlock? "+(activeBlocksHashMap.containsKey(newBlock)));
 
 				/**remove the file handle from the handleHashMap **/
 				handleBlockHashMap.remove(handle);
 				
 				/**now finally dissociate the file handle **/
-//				putFile.removeFileHandleNew(handle);
+				
 				putFile.fileHandletoFileName.remove(handle);
 				putFile.fileBlocks.remove(handle);
 				
@@ -226,8 +221,7 @@ public class NameNodeDriver implements INameNode
 				System.out.println("its an abort");
 
 				Vector<String> myBlocks = handleBlockHashMap.get(handle);				
-				String newBlock = myBlocks.get(1);
-				
+								
 				/**remove the entry from the block handle hashmap **/
 				removeBlocksFromActiveBlocksHashMap(handleBlockHashMap.get(handle));// handle block contains append blocks with it
 //				activeBlocksHashMap.remove(newBlock);
@@ -235,8 +229,7 @@ public class NameNodeDriver implements INameNode
 				/**remove the file handle from the handleHashMap **/
 				handleBlockHashMap.remove(handle);
 				
-				/**now finally dissociate the file handle **/
-//				putFile.removeFileHandleNew(handle);
+				/**now finally dissociate the file handle **/				
 				putFile.fileHandletoFileName.remove(handle);
 				putFile.fileBlocks.remove(handle);
 			}
@@ -267,7 +260,8 @@ public class NameNodeDriver implements INameNode
 	// TODO Auto-generated method stub
 		for(int i=1;i<blocks.size();i++)// from i =1 since 1 = 0 rep
 		{
-			allBlocksHashMap.put(blocks.get(i),1);
+			String[] myArray = blocks.get(i).split("\\.",0);
+			allBlocksHashMap.put(myArray[0],Integer.valueOf(myArray[1]));
 		}
 	}
 
@@ -319,7 +313,7 @@ public class NameNodeDriver implements INameNode
 			int numBlock = getBlockNum(); //here is the needed change, 12 to 12.1.1
 			String newNumBlock = String.valueOf(numBlock);
 			/** all blocks under processing are added here **/
-			activeBlocksHashMap.put(numBlock+".1", 1);
+			activeBlocksHashMap.put(numBlock+"", 1);//format changed to 12->1, this is for more than 1 block append
 			newNumBlock += ".1.1"; //version and clock
 			
 			putFile.insertFileBlock(handle, newNumBlock);
@@ -412,6 +406,7 @@ public class NameNodeDriver implements INameNode
 //		System.out.println("Block report called");
 		BlockReportResponse.Builder res = BlockReportResponse.newBuilder();
 		
+		
 		try {
 			BlockReportRequest req = BlockReportRequest.parseFrom(inp);
 			
@@ -453,18 +448,46 @@ public class NameNodeDriver implements INameNode
 			
 			/** now need to use hashmap to  this to send delete blocks **/
 			List<String> deleteBlocks = new ArrayList<>();
+			List<BlockLocations> compareAndAdd = new ArrayList<>();
 			
 			for(int i=0;i<req.getBlockNumbersCount();i++)
 			{
 				String numBlock = req.getBlockNumbers(i);
-				/**check if the block is present in the allblocks hashMap **/
+				/** num block will be present in the form 12.2 **/
+				String[] myArray = numBlock.split("\\.");
+				String blockNumber = myArray[0];
+				Integer version = Integer.valueOf(myArray[1]); 
+				/**check if the block is present in the allblockshashMap **/
 
-				if(allBlocksHashMap.containsKey(numBlock)==false) //then this maybe an incremented block
+				if(allBlocksHashMap.containsKey(blockNumber)  && allBlocksHashMap.get(blockNumber)!=version) //then this maybe an incremented block
 				{
-					if(activeBlocksHashMap.containsKey(numBlock)==false)
+					if(activeBlocksHashMap.containsKey(blockNumber) && activeBlocksHashMap.get(blockNumber)!=version)
 					{
-						deleteBlocks.add(numBlock);
-//						System.out.println("the delete block is "+numBlock);
+						/**need to check first whether the higher version of 
+						 * the block is already present with me, in case then delete the block
+						 */
+						boolean isPresentHigher = checkHigherBlock(blockNumber,loc);
+						if(isPresentHigher)// means higher version is present and so delete lower version
+						{
+							deleteBlocks.add(numBlock);		
+							
+						}
+						else // need to send the location of the highest version copy block
+						{
+							String highestVBlock = blockNumber+".";
+							highestVBlock += allBlocksHashMap.get(blockNumber); //will be 12.2
+							
+							//now get their locations if they are present
+							BlockLocations.Builder myBlockLocations = BlockLocations.newBuilder();							
+							List<DataNodeLocation> dNodeLocations = blockLocations.get(highestVBlock);
+							
+							if(dNodeLocations.size()==0)
+								myBlockLocations.setBlockNumber("-1");//case where nodes which contain the latest blocks aren't up
+							
+							myBlockLocations.addAllLocations(dNodeLocations); // added all
+							compareAndAdd.add(myBlockLocations.build());
+							
+						}
 					}
 				}
 			}
@@ -472,6 +495,7 @@ public class NameNodeDriver implements INameNode
 //			System.out.println("delete blocks list is "+deleteBlocks.toString());
 			
 			res.addAllDeleteBlocks(deleteBlocks);
+			res.addAllBlockInfo(compareAndAdd);
 			deleteBlocks.clear();
 //			System.out.print(dataNodes.get(id));
 			
@@ -486,7 +510,21 @@ public class NameNodeDriver implements INameNode
 
 	}
 
-
+	/**
+	 * to check whether to send delete block is sent or copy block is sent
+	 * @return
+	 */
+	boolean checkHigherBlock(String bNumber,DataNodeLocation loc)
+	{
+		Integer highestVersion = allBlocksHashMap.get(bNumber);
+		
+		List<DataNodeLocation> dataNodeLocations = blockLocations.get(bNumber+highestVersion);
+		
+		if(dataNodeLocations.contains(loc)) // ie highest version is already present so say yes
+			return true;
+		else
+			return false;
+	}
 
 	@Override
 	public byte[] heartBeat(byte[] inp) throws RemoteException {
@@ -746,7 +784,7 @@ public class NameNodeDriver implements INameNode
 			    newBlock = newBlock+".";
 			    newBlock = newBlock + String.valueOf(clock);
 			    /**add block to active map **/
-			    activeBlocksHashMap.put(newBlock, 1);
+			    activeBlocksHashMap.put(myArray[0], clock);//changed 12->2 block->version
 			    
 			    
 			    updateClockLastBlock(myArray[0]+"."+myArray[1]+"."+clock,fileName);
@@ -1009,7 +1047,7 @@ public class NameNodeDriver implements INameNode
 	{
 		for(int i=1;i<blocks.size();i++)// from i =1 since 1 = 0 rep
 		{
-			activeBlocksHashMap.remove(blocks.get(i));
+			activeBlocksHashMap.remove(blocks.get(i).split("\\.",0)[0]); // similar to myArray[0]
 		}
 	}
 }

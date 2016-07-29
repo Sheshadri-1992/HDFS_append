@@ -34,34 +34,7 @@ public class PutFile {
 	 * FileName in a different file
 	 * blocknumbers, new line separated in a different file
 	 */
-////	public void removeFileHandle(int handle)
-////	{
-////		
-////		StringBuilder sb = new StringBuilder();
-////		/**
-////		 * File handle maps handle to a filename, the filename has to written in the NNConf
-////		 * the blocknumbers have to be written line separated into a new file
-////		 */
-////		
-////		sb.append(fileHandletoFileName.get(handle));
-////		sb.append(":");
-////		for(int i=0;i<fileBlocks.get(handle).size();i++)
-////		{
-////			String block= fileBlocks.get(handle).get(i);
-////			
-////			sb.append(block.toString());
-////			if(i!=fileBlocks.get(handle).size()-1)
-////				sb.append(",");
-////			
-////		}
-////		sb.append("\n");
-////		
-////		writeToConf(sb.toString());
-////		
-////		fileHandletoFileName.remove(handle);
-////		fileBlocks.remove(handle);
-//	}
-	
+
 	public void removeFileHandleNew(int handle)
 	{
 		
@@ -180,8 +153,8 @@ public class PutFile {
 		{
 			String block= fileBlocks.get(handle).get(i);
 			String[] blockWithVersion = block.split("\\.",0);
-			System.out.println(blockWithVersion[0]+"."+blockWithVersion[1]);
-			myHashMap.put(blockWithVersion[0]+"."+blockWithVersion[1], 1);//this would add a block like 12.1 
+			System.out.println(blockWithVersion[0]+" all blocks format changed while we put");
+			myHashMap.put(blockWithVersion[0] ,Integer.valueOf(blockWithVersion[1]));//this would add a block like 12.1 
 			sb.append(block.toString());
 			if(i!=fileBlocks.get(handle).size()-1)
 				sb.append("\n"); //write blocks line by line
@@ -210,8 +183,8 @@ public class PutFile {
 		{
 			String block= fileBlocks.get(handle).get(i);
 			String[] blockWithVersion = block.split("\\.",0);
-			System.out.println(blockWithVersion[0]+"."+blockWithVersion[1]);
-			myHashMap.remove(blockWithVersion[0]+"."+blockWithVersion[1]);//this would add a block like 12.1	
+			System.out.println(blockWithVersion[0]+" changed");
+			myHashMap.remove(blockWithVersion[0]);//this would add a block like 12.1	
 			
 		}
 				
