@@ -95,7 +95,7 @@ message BlockReportRequest {
 message BlockReportResponse {
   repeated int32 status = 1;
   repeated string deleteBlocks =2 ; //list of blocks that need to be deleted.
-  optional DataNodeLocation location = 3; // This is to retrieve blocks from other data nodes 
+  optional BlockLocations blockInfo = 3; // This is to retrieve blocks from other data nodes 
 
 }
 

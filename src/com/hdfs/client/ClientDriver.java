@@ -167,6 +167,9 @@ public class ClientDriver {
 		/**if totalbytes is less than remaining then we only need to append
 		 * if totalbytes is greater then append and and create new block
 		 */
+		INameNode nameStub=null;
+		
+		boolean isException = false;
 		
 		if(totalBytes<remainSize)
 		{
@@ -183,7 +186,7 @@ public class ClientDriver {
 			
 			InputStream in = new FileInputStream("test.txt");
 			Registry registry = LocateRegistry.getRegistry(Constants.NAME_NODE_IP,Registry.REGISTRY_PORT);
-			INameNode nameStub = (INameNode) registry.lookup(Constants.NAME_NODE);
+			nameStub = (INameNode) registry.lookup(Constants.NAME_NODE);
 
 			WriteBlockRequest.Builder writeReqObj = WriteBlockRequest.newBuilder();
 
@@ -281,6 +284,20 @@ public class ClientDriver {
 		{
 			e.printStackTrace();
 			System.out.println("Whats up exception caught!");
+			isException=true;
+		}
+		
+		if(isException)
+		{
+			CloseFileRequest.Builder closeFileObj = CloseFileRequest.newBuilder();
+			closeFileObj.setDecision(0);//abort
+			closeFileObj.setHandle(resObj.getHandle()); //handle
+			try {
+				nameStub.closeFile(closeFileObj.build().toByteArray());
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
 		

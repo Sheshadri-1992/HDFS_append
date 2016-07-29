@@ -140,8 +140,8 @@ public class DataNodeDriver implements IDataNode {
 				
 				if(!newBlock.equals("-1"))
 				{
-					System.out.println("this just append");
-					System.out.println(str);
+//					System.out.println("this just append");
+//					System.out.println(str);
 					
 					createDuplicate(blockNumber,writeBlockRequestObj.getNewBlockNum(),str);
 					
