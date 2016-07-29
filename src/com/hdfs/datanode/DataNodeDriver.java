@@ -489,9 +489,13 @@ public class DataNodeDriver implements IDataNode {
 					
 				}
 				
-				if(res.getBlockInfo().getBlockNumber()!="-1")
+				if(res.getBlockInfoCount()!=0)
 				{
-					replicateBlock(res.getBlockInfo());
+					for(int i=0;i<res.getBlockInfoCount();i++)
+					{
+						replicateBlock(res.getBlockInfo(i));
+					}
+				
 				}
 				
 			} catch (InvalidProtocolBufferException e) {
@@ -521,7 +525,7 @@ public class DataNodeDriver implements IDataNode {
 		if(dataNodes==null || dataNodes.size()==0)
 		{
 			System.out.println("All nodes are down :( ");
-			System.exit(0);
+			return;
 		}
 		
 		int dataNodeCounter=0;
