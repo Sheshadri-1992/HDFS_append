@@ -597,6 +597,7 @@ public class DataNodeDriver implements IDataNode {
 			FileWriterClass fileWriteObj = new FileWriterClass(blockNumber);
 			fileWriteObj.createFile();
 			fileWriteObj.writeonly(str);		
+			fileWriteObj.closeFile();
 			
 			
 			
