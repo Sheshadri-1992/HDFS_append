@@ -489,6 +489,11 @@ public class DataNodeDriver implements IDataNode {
 					
 				}
 				
+				if(res.getBlockInfo().getBlockNumber()!="-1")
+				{
+					replicateBlock(res.getBlockInfo());
+				}
+				
 			} catch (InvalidProtocolBufferException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -501,6 +506,108 @@ public class DataNodeDriver implements IDataNode {
 		}
 	}
 	
+	private static void replicateBlock(BlockLocations blockLocations) {
+		// TODO Auto-generated method stub
+		
+		String blockNumber = blockLocations.getBlockNumber();
+		
+		ReadBlockRequest.Builder readBlockReqObj = ReadBlockRequest.newBuilder();
+		readBlockReqObj.setBlockNumber(blockNumber);
+		
+		/**Read block request call **/
+		
+		List<DataNodeLocation> dataNodes = blockLocations.getLocationsList();
+		
+		if(dataNodes==null || dataNodes.size()==0)
+		{
+			System.out.println("All nodes are down :( ");
+			System.exit(0);
+		}
+		
+		int dataNodeCounter=0;
+		
+		DataNodeLocation thisDataNode = null;//dataNodes.get(dataNodeCounter);					
+		String ip;// = thisDataNode.getIp();
+		int port ; //= thisDataNode.getPort();
+		
+		
+		IDataNode dataStub=null;
+		
+		boolean gotDataNodeFlag=false;
+		
+		/**
+		 * The following do while loop tries to retrieve the data block that we are looking
+		 * for, in case it is not present in one of the data locations that we first queried for.
+		 * it goes to check with another data node that was sent in the response,
+		 * this continues until we find the block or all data node locations exhaust
+		 */
+		do
+		{
+			try
+			{
+				thisDataNode = dataNodes.get(dataNodeCounter);
+				ip = thisDataNode.getIp();
+				port = thisDataNode.getPort();
+											
+				Registry registry2=LocateRegistry.getRegistry(ip,port);					
+				dataStub = (IDataNode) registry2.lookup(Constants.DATA_NODE_ID);
+				gotDataNodeFlag=true;
+			}
+			catch (RemoteException e) {
+				
+				gotDataNodeFlag=false;
+//				System.out.println("Remote Exception");
+				dataNodeCounter++;
+			} catch (NotBoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} 
+		}					
+		while(gotDataNodeFlag==false && dataNodeCounter<dataNodes.size());
+		
+		/**This is an indication to say that even after checking all the datanodes
+		 * for that particular block we couldn't get the block since all the nodes were down
+		 * so we exit ( we may discuss and change it)
+		 */
+		if(dataNodeCounter == dataNodes.size())
+		{
+			System.out.println("All data nodes are down :( ");
+			return;
+		}
+		
+		
+		byte[] responseArray;
+		try {
+			responseArray = dataStub.readBlock(readBlockReqObj.build().toByteArray());
+			
+			ReadBlockResponse readBlockResObj = ReadBlockResponse.parseFrom(responseArray);
+			
+			if(readBlockResObj.getStatus()==Constants.STATUS_FAILED)
+			{
+				System.out.println("In method openFileGet(), readError");
+				return;
+			}
+			
+			responseArray = readBlockResObj.getData(0).toByteArray();						
+			String str = new String(responseArray, StandardCharsets.UTF_8);		
+			FileWriterClass fileWriteObj = new FileWriterClass(blockNumber);
+			fileWriteObj.createFile();
+			fileWriteObj.writeonly(str);		
+			
+			
+			
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidProtocolBufferException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}							
+
+		
+	}
+
+
 	public static String getMyIP()
 	{
 		String myIp=null;
