@@ -459,9 +459,9 @@ public class NameNodeDriver implements INameNode
 				Integer version = Integer.valueOf(myArray[1]); 
 				/**check if the block is present in the allblockshashMap **/
 
-				if(allBlocksHashMap.containsKey(blockNumber)  && allBlocksHashMap.get(blockNumber)!=version) //then this maybe an incremented block
+				if(allBlocksHashMap.get(blockNumber)!=version) //then this maybe an incremented block
 				{
-					if(activeBlocksHashMap.containsKey(blockNumber) && activeBlocksHashMap.get(blockNumber)!=version)
+					if(activeBlocksHashMap.get(blockNumber)!=version)
 					{
 						/**need to check first whether the higher version of 
 						 * the block is already present with me, in case then delete the block
@@ -492,12 +492,11 @@ public class NameNodeDriver implements INameNode
 				}
 			}
 			
-//			System.out.println("delete blocks list is "+deleteBlocks.toString());
+			System.out.println("delete blocks list is "+deleteBlocks.toString());
 			
 			res.addAllDeleteBlocks(deleteBlocks);
 			res.addAllBlockInfo(compareAndAdd);
-			deleteBlocks.clear();
-//			System.out.print(dataNodes.get(id));
+			deleteBlocks.clear();			
 			
 			res.addStatus(Constants.STATUS_SUCCESS);
 		
@@ -516,9 +515,10 @@ public class NameNodeDriver implements INameNode
 	 */
 	boolean checkHigherBlock(String bNumber,DataNodeLocation loc)
 	{
+		System.out.println(" contorl cam e here");
 		Integer highestVersion = allBlocksHashMap.get(bNumber);
-		
-		List<DataNodeLocation> dataNodeLocations = blockLocations.get(bNumber+highestVersion);
+		System.out.println(" highest version block is "+bNumber+highestVersion);
+		List<DataNodeLocation> dataNodeLocations = blockLocations.get(bNumber+"."+highestVersion);
 		
 		if(dataNodeLocations.contains(loc)) // ie highest version is already present so say yes
 			return true;
