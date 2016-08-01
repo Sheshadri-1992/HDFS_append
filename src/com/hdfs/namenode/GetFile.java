@@ -86,6 +86,8 @@ public class GetFile {
 		
 		List<BlockLocations> resLocations = new ArrayList<>();
 		
+		System.out.println("Requested blocks "+blocks);
+		
 		for(String block : blocks)
 		{
 			BlockLocations.Builder blk = BlockLocations.newBuilder();

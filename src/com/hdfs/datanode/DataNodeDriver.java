@@ -517,6 +517,7 @@ public class DataNodeDriver implements IDataNode {
 		
 		ReadBlockRequest.Builder readBlockReqObj = ReadBlockRequest.newBuilder();
 		readBlockReqObj.setBlockNumber(blockNumber);
+		System.out.println("Replicating "+blockNumber );
 		
 		/**Read block request call **/
 		
@@ -594,11 +595,12 @@ public class DataNodeDriver implements IDataNode {
 			
 			responseArray = readBlockResObj.getData(0).toByteArray();						
 			String str = new String(responseArray, StandardCharsets.UTF_8);		
-			FileWriterClass fileWriteObj = new FileWriterClass(blockNumber);
+			FileWriterClass fileWriteObj = new FileWriterClass(getDirectoryName()+"/"+blockNumber);
 			fileWriteObj.createFile();
 			fileWriteObj.writeonly(str);		
 			fileWriteObj.closeFile();
-			
+			/*update local list of blocks */
+			insertBlockInDir(blockNumber);
 			
 			
 		} catch (RemoteException e) {

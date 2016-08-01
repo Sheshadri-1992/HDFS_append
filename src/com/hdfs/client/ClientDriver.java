@@ -282,7 +282,7 @@ public class ClientDriver {
 		}
 		catch(Exception e)
 		{
-			e.printStackTrace();
+			//e.printStackTrace();
 			System.out.println("Whats up exception caught!");
 			isException=true;
 		}

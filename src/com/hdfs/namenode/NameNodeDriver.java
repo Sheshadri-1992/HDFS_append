@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 //import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -180,6 +181,8 @@ public class NameNodeDriver implements INameNode
 			{
 				System.out.println("its a commit");
 				Vector<String> myBlocks = handleBlockHashMap.get(handle);
+				System.out.println("Size if handle" + myBlocks.size());
+				
 				String oldBlock = myBlocks.get(0);
 				String newBlock = myBlocks.get(1);
 				
@@ -339,13 +342,16 @@ public class NameNodeDriver implements INameNode
 				int [] randoms = getTwoRandoms(max); // get random nodes of all the number of active datanodes
 				
 				List<Integer> keys      = new ArrayList<Integer>(dataNodes.keySet());
-				Integer randomKey = keys.get( randoms[0]);
-				DataNodeLocation value     = dataNodes.get(randomKey);
-				blocks.addLocations(value);
 				
-				randomKey = keys.get( randoms[1]);
-				value = dataNodes.get(randomKey);
-				blocks.addLocations(value);
+				for(int i=0;i<randoms.length;i++)
+				{
+					Integer randomKey = keys.get( randoms[i]);
+					DataNodeLocation value     = dataNodes.get(randomKey);
+					blocks.addLocations(value);
+				}
+				
+
+				
 			}
 			
 	
@@ -406,15 +412,15 @@ public class NameNodeDriver implements INameNode
 //		System.out.println("Block report called");
 		BlockReportResponse.Builder res = BlockReportResponse.newBuilder();
 		
-		
+	
 		try {
 			BlockReportRequest req = BlockReportRequest.parseFrom(inp);
 			
 			int id = req.getId();
-//			System.out.println("Block report from Datanode"+id);
+			
 			DataNodeLocation loc = req.getLocation();
 			
-//			System.out.println("Data node " + req.getBlockNumbersCount());
+			
 			
 			dataNodes.put(id,loc);
 			
@@ -434,12 +440,19 @@ public class NameNodeDriver implements INameNode
 				{
 					List<DataNodeLocation> tmpLoc = blockLocations.get(numBlock);
 					
-					if(tmpLoc.size()!=2)
+					boolean flag=true;
+					for(DataNodeLocation location:tmpLoc)
 					{
-						if(!tmpLoc.get(0).equals(loc))
+						if(location.equals(loc))
 						{
-							tmpLoc.add(loc);
+							flag=false;
+							break;
 						}
+					}
+					
+					if(flag)
+					{
+						tmpLoc.add(loc);
 					}
 				}
 				
@@ -467,9 +480,11 @@ public class NameNodeDriver implements INameNode
 						 * the block is already present with me, in case then delete the block
 						 */
 						boolean isPresentHigher = checkHigherBlock(blockNumber,loc);
-						if(isPresentHigher)// means higher version is present and so delete lower version
+						if(isPresentHigher==true)// means higher version is present and so delete lower version
 						{
-							deleteBlocks.add(numBlock);		
+							
+							deleteBlocks.add(numBlock);	
+							blockLocations.remove(numBlock);
 							
 						}
 						else // need to send the location of the highest version copy block
@@ -481,23 +496,25 @@ public class NameNodeDriver implements INameNode
 							BlockLocations.Builder myBlockLocations = BlockLocations.newBuilder();							
 							List<DataNodeLocation> dNodeLocations = blockLocations.get(highestVBlock);
 							
-							if(dNodeLocations.size()==0)
-								myBlockLocations.setBlockNumber("-1");//case where nodes which contain the latest blocks aren't up
+							if(dNodeLocations.size()>0)
+							{
+								myBlockLocations.setBlockNumber(highestVBlock);//case where nodes which contain the latest- blocks aren't up
+								myBlockLocations.addAllLocations(dNodeLocations); // added all
+								compareAndAdd.add(myBlockLocations.build());
+							}
 							
-							myBlockLocations.addAllLocations(dNodeLocations); // added all
-							compareAndAdd.add(myBlockLocations.build());
 							
 						}
 					}
 				}
 			}
 			
-			System.out.println("delete blocks list is "+deleteBlocks.toString());
+//			System.out.println("delete blocks list is "+deleteBlocks.toString());
 			
 			res.addAllDeleteBlocks(deleteBlocks);
 			res.addAllBlockInfo(compareAndAdd);
 			deleteBlocks.clear();			
-			
+			compareAndAdd.clear();
 			res.addStatus(Constants.STATUS_SUCCESS);
 		
 		} catch (InvalidProtocolBufferException e) {
@@ -515,15 +532,22 @@ public class NameNodeDriver implements INameNode
 	 */
 	boolean checkHigherBlock(String bNumber,DataNodeLocation loc)
 	{
-		System.out.println(" contorl cam e here");
+		
 		Integer highestVersion = allBlocksHashMap.get(bNumber);
-		System.out.println(" highest version block is "+bNumber+highestVersion);
+		
 		List<DataNodeLocation> dataNodeLocations = blockLocations.get(bNumber+"."+highestVersion);
 		
-		if(dataNodeLocations.contains(loc)) // ie highest version is already present so say yes
-			return true;
-		else
-			return false;
+		for (Iterator<DataNodeLocation> iterator = dataNodeLocations.iterator();iterator.hasNext();)
+		{
+			DataNodeLocation dataNodeLocation = (DataNodeLocation) iterator.next();
+			System.out.print(dataNodeLocation);
+			
+			if(dataNodeLocation.equals(loc))
+				return true;
+			
+		}
+	
+		return false;
 	}
 
 	@Override
@@ -595,12 +619,13 @@ public class NameNodeDriver implements INameNode
 	/**Need to change it to 3 randoms **/
 	private int[] getTwoRandoms(int max) {
 		// TODO Auto-generated method stub
-		int [] randoms = new int[2];
+		int [] randoms = new int[3];
 		Random rand =new Random();
 		int min=0;
 		
 		int random = rand.nextInt((max - min)) + min;
 		int random2;
+		int random3;
 		
 		randoms[0]=random;
 		
@@ -611,6 +636,14 @@ public class NameNodeDriver implements INameNode
 	    while(random==random2) ;
 		
 		randoms[1] = random2;
+		
+		do
+		{
+			random3 = rand.nextInt((max - min)) + min;
+		}
+	    while(random3==random2 || random3==random) ;
+		
+		randoms[2] = random3;
 		
 		return randoms;
 	}
@@ -1047,6 +1080,8 @@ public class NameNodeDriver implements INameNode
 	{
 		for(int i=1;i<blocks.size();i++)// from i =1 since 1 = 0 rep
 		{
+			System.out.println("removeBlocksActv "+blocks.get(i));
+//			String[] myArray = blocks.ge
 			activeBlocksHashMap.remove(blocks.get(i).split("\\.",0)[0]); // similar to myArray[0]
 		}
 	}
