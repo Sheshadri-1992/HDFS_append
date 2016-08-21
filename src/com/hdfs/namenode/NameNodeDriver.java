@@ -389,11 +389,28 @@ public class NameNodeDriver implements INameNode
 		res.setStatus(Constants.STATUS_FAILED);
 		try {
 			ListFilesRequest req = ListFilesRequest.parseFrom(inp);
+			String wildCard = req.getDirName();
 			
-			res.addAllFileNames(getFile.getAllFileNames());
+			if(wildCard != null)
+			{
+				List<String> fileNames = getFile.getAllFileNames();
+				List<String> matchedFiles = new ArrayList<>();
+				for(String str: fileNames)
+				{
+					if(str.startsWith(wildCard))
+					{
+						matchedFiles.add(str);
+					}
+				}
+				res.addAllFileNames(matchedFiles);
+				
+			}else
+			{
+				res.addAllFileNames(getFile.getAllFileNames());
+				
+			}
+			
 			res.setStatus(Constants.STATUS_SUCCESS);
-			
-			
 			
 		} catch (InvalidProtocolBufferException e) {
 			// TODO Auto-generated catch block
