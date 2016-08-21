@@ -955,7 +955,16 @@ public class ClientDriver {
 	public static void callListBlocks()
 	{
 		ListFilesRequest.Builder listFileReqObj = ListFilesRequest.newBuilder();
-		listFileReqObj.setDirName("Shweta , Lamport and Berkeley, Sheshadri :)");		
+		
+		if(fileName.equals("."))
+		{
+			listFileReqObj.setDirName("");
+		}else
+		{
+			listFileReqObj.setDirName(fileName);
+		}
+		
+				
 		
 		Registry registry;
 		try {
