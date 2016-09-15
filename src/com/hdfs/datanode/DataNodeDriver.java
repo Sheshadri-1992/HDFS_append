@@ -162,7 +162,12 @@ public class DataNodeDriver implements IDataNode {
 		
 					FileWriterClass fileWriterObj = new FileWriterClass(getDirectoryName()+"/"+blockNumber);
 					fileWriterObj.createFile();
-					fileWriterObj.writeonly(str);
+					//fileWriterObj.writeonly(str);
+					/**
+					 *  @Shweta
+					 *  writing to file in bytes
+					 */
+					fileWriterObj.writeBytes(receivedByteArray);
 					fileWriterObj.closeFile();
 					
 					/*update local list of blocks */
@@ -189,7 +194,8 @@ public class DataNodeDriver implements IDataNode {
 				/**Write into FIle **/
 				FileWriterClass fileWriterObj = new FileWriterClass(getDirectoryName()+"/"+blockNumber);
 				fileWriterObj.createFile();
-				fileWriterObj.writeonly(str);
+//				fileWriterObj.writeonly(str);
+				fileWriterObj.writeBytes(receivedByteArray);
 				fileWriterObj.closeFile();
 				
 				/*update local list of blocks */
@@ -597,7 +603,12 @@ public class DataNodeDriver implements IDataNode {
 			String str = new String(responseArray, StandardCharsets.UTF_8);		
 			FileWriterClass fileWriteObj = new FileWriterClass(getDirectoryName()+"/"+blockNumber);
 			fileWriteObj.createFile();
-			fileWriteObj.writeonly(str);		
+			//fileWriteObj.writeonly(str); 
+			/**
+			 *  @Shweta
+			 *  writing to file in bytes
+			 */
+			fileWriteObj.writeBytes(responseArray);
 			fileWriteObj.closeFile();
 			/*update local list of blocks */
 			insertBlockInDir(blockNumber);
