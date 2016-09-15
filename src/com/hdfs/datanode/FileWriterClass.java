@@ -1,6 +1,7 @@
 package com.hdfs.datanode;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 
@@ -54,6 +55,23 @@ public class FileWriterClass {
 			System.out.println("File IO exception in FileWriter Class");
 		}
 	}
+	
+	public void writeBytes(byte[] receivedByteArray)
+	{
+		byte[] in = receivedByteArray;
+		
+		try
+		{
+			FileOutputStream fos = new FileOutputStream(filename,true);
+			fos.write(in);
+			fos.close();
+		}
+		catch(IOException e)
+		{
+			System.out.println("File IO exception in FileWriter Class");
+		}
+	}
+	
 	
 	public void closeFile()
 	{
