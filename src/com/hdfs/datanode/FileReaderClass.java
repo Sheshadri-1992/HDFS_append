@@ -55,6 +55,31 @@ public class FileReaderClass {
 		return line;
 	}
 	
+	public byte[] readFileFromBytes()
+	{
+		
+		 FileInputStream fileInputStream = null;
+		 File file = new File(fileName);
+	      byte[] bFile = new byte[(int) file.length()];
+	      try
+	      {
+	         //convert file into array of bytes
+	         fileInputStream = new FileInputStream(file);
+	         fileInputStream.read(bFile);
+	         fileInputStream.close();
+	         if(bFile.length==0)
+	         {
+	        	 active=false;
+	         }
+	      }
+	      catch (Exception e)
+	      {
+	         e.printStackTrace();
+	      }
+	      return bFile;
+	}
+	
+	
 	public void closeFile()
 	{
 		try
