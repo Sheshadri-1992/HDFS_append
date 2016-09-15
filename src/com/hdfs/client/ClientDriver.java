@@ -42,6 +42,7 @@ public class ClientDriver {
 	public static byte[] byteArray;
 	public static FileInputStream fis;
 	public static long FILESIZE;
+	public static String appendFile;
 	
 	public static void main(String[] args) throws NotBoundException, IOException {
 		// TODO Auto-generated method stub
@@ -55,6 +56,7 @@ public class ClientDriver {
 
 		
 		fileName = args[0];
+		appendFile="test";
 		
 		/**args[1] can be get put or list **/
 		if(args[1].toLowerCase().equals("put"))
@@ -117,8 +119,8 @@ public class ClientDriver {
 			
 			System.out.println("The remaining size  is "+remainSize);
 		    BufferedReader breader = null;
-		    breader = new BufferedReader(new FileReader("test.txt") );
-		    File myFile = new File("test.txt");
+		    breader = new BufferedReader(new FileReader(appendFile) );
+		    File myFile = new File(appendFile);
 		    int bytesToRead = 0;
 		    if(myFile.exists())
 		    {
@@ -184,7 +186,7 @@ public class ClientDriver {
 		try
 		{
 			
-			InputStream in = new FileInputStream("test.txt");
+			InputStream in = new FileInputStream(appendFile);
 			Registry registry = LocateRegistry.getRegistry(Constants.NAME_NODE_IP,Registry.REGISTRY_PORT);
 			nameStub = (INameNode) registry.lookup(Constants.NAME_NODE);
 
@@ -282,7 +284,7 @@ public class ClientDriver {
 		}
 		catch(Exception e)
 		{
-			//e.printStackTrace();
+			e.printStackTrace();
 			System.out.println("Whats up exception caught!");
 			isException=true;
 		}
@@ -475,8 +477,8 @@ public class ClientDriver {
 //		      }
 		      System.out.println("The remaining size  is "+remainsize);
 		      BufferedReader breader = null;
-		      breader = new BufferedReader(new FileReader("test.txt") );
-		      File myFile = new File("test.txt");
+		      breader = new BufferedReader(new FileReader(appendFile) );
+		      File myFile = new File(appendFile);
 		      int bytesToRead = 0;
 		      if(myFile.exists())
 		      {
@@ -1148,7 +1150,8 @@ public class ClientDriver {
 					
 					responseArray = readBlockResObj.getData(0).toByteArray();						
 					String str = new String(responseArray, StandardCharsets.UTF_8);						
-					fileWriteObj.writeonly(str);												
+					//fileWriteObj.writeonly(str);
+					fileWriteObj.writeBytes(responseArray);
 
 				}
 				
