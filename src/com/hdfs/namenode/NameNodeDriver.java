@@ -397,7 +397,7 @@ public class NameNodeDriver implements INameNode
 				List<String> matchedFiles = new ArrayList<>();
 				for(String str: fileNames)
 				{
-					if(str.startsWith(wildCard))
+					if(str.endsWith(wildCard))   // hbase convention timestamp-index-tableName-startkey
 					{
 						matchedFiles.add(str);
 					}
