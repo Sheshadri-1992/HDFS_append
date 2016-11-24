@@ -6,8 +6,8 @@ then
 
 elif [ $1 == '-r' ]
 then
-	java -cp bin: com.hdfs.client.ClientDriver $2 $3   #filename operation
+	java -cp bin: com.hdfs.client.ClientDriver $@  #filename operation
 else
-	java -cp bin: com.hdfs.client.ClientDriver $1 $2   #filename operation
+	java -cp bin: com.hdfs.client.ClientDriver $@   #filename operation
 fi
 

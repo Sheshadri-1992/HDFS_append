@@ -44,9 +44,13 @@ public class ClientDriver {
 	public static long FILESIZE;
 	public static String appendFile;
 	
+	
+	
+	
 	public static void main(String[] args) throws NotBoundException, IOException {
 		// TODO Auto-generated method stub
 
+		
 		System.setProperty("java.security.policy","./security.policy");
 
 		
@@ -57,6 +61,8 @@ public class ClientDriver {
 		
 		fileName = args[0];
 		appendFile="test";
+		
+		
 		
 		/**args[1] can be get put or list **/
 		if(args[1].toLowerCase().equals("put"))
@@ -75,6 +81,9 @@ public class ClientDriver {
 		else if(args[1].toLowerCase().equals("append"))
 		{		
 //			openFileAppend();
+			
+			appendFile = args[2];
+			System.out.println("Append "+appendFile);
 			appendTesting();
 		}
 		
@@ -966,6 +975,7 @@ public class ClientDriver {
 			listFileReqObj.setDirName(fileName);
 		}
 		
+		System.out.println(" helllo"+listFileReqObj);
 				
 		
 		Registry registry;
@@ -1343,7 +1353,7 @@ public class ClientDriver {
 	}
 	
 	/**Read 32MB size of data from the provided input file **/
-	public static byte[] read32MBfromFile(int offset)
+	/*public static byte[] read32MBfromFile(int offset)
 	{
 		
 		System.out.println("offset is "+offset);
@@ -1393,6 +1403,61 @@ public class ClientDriver {
 		
 //		System.out.println("The new char array is "+newCharArray.length);
 		return new String(newCharArray).getBytes(StandardCharsets.UTF_8);
+		
+	}*/
+	
+	public static byte[] read32MBfromFile(int offset)
+	{
+		
+		System.out.println("offset is "+offset);
+
+		
+		FileInputStream breader = null;
+		try {
+			breader = new FileInputStream(fileName);
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+
+		
+		
+		int bytesToBeRead = (int)Constants.BLOCK_SIZE;
+		
+		int limit =offset+(int)Constants.BLOCK_SIZE; 
+		
+		if(limit >= (int) FILESIZE)
+		{
+			bytesToBeRead = (int)FILESIZE - offset;
+		}
+		else
+		{
+			bytesToBeRead = (int)Constants.BLOCK_SIZE;			
+		}
+		
+		
+		
+		byte[] newCharArray = new byte[bytesToBeRead];
+		
+		try {
+//			breader.skip(offset);
+			breader.read(newCharArray, 0, bytesToBeRead);
+			
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
+		try {
+			breader.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+//		System.out.println("The new char array is "+newCharArray.length);
+		return newCharArray;
 		
 	}
 	

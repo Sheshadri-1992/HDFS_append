@@ -34,7 +34,7 @@ public class GetFile {
 			String line=null;
 			while((line = buff.readLine())!=null)
 			{
-				if(line.startsWith(fileName))
+				if(line.equals(fileName))
 				{
 					break;
 				}
