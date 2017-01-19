@@ -1240,7 +1240,7 @@ public class ClientDriver {
 						e.printStackTrace();
 					}
 
-//					System.out.println("No of blocks are "+no_of_blocks);
+					System.out.println("No of blocks are "+no_of_blocks);
 					if(no_of_blocks==0)
 						no_of_blocks=1;
 					
@@ -1441,7 +1441,7 @@ public class ClientDriver {
 		byte[] newCharArray = new byte[bytesToBeRead];
 		
 		try {
-//			breader.skip(offset);
+			breader.skip(offset);
 			breader.read(newCharArray, 0, bytesToBeRead);
 			
 			
