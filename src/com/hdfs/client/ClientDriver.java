@@ -227,7 +227,14 @@ public class ClientDriver {
 			writeReqObj.setIsAppend(true);
 			writeReqObj.setNewBlockNum(resObj.getNewBlockNum());
 			writeReqObj.setCount(0);
-			writeReqObj.addData(ByteString.copyFrom(firstData));// initial set of data is sent
+			
+			
+			for(int j=0;j<firstData.length;j++)
+			{
+				writeReqObj.addData(ByteString.copyFrom(firstData,j,1));
+			}
+			
+		//	writeReqObj.addData(ByteString.copyFrom(firstData));// initial set of data is sent
 
 
 			List<BlockLocations> blockLocations =  myResponse.getBlockLocationsList();				
@@ -383,7 +390,14 @@ public class ClientDriver {
 				writeBlkReq.setIsAppend(true);
 				writeBlkReq.setNewBlockNum("-1");
 				writeBlkReq.setBlockInfo(thisBlock);
-				writeBlkReq.addData(ByteString.copyFrom(data));
+				
+				
+				for(int j=0;j<data.length;j++)
+				{
+					writeBlkReq.addData(ByteString.copyFrom(data, j, 1));
+				}
+				
+//				writeBlkReq.addData(ByteString.copyFrom(data));
 				
 				byte[] writeReqResponse = dataStub.writeBlock(writeBlkReq.build().toByteArray());
 				WriteBlockResponse writeBlkRes = WriteBlockResponse.parseFrom(writeReqResponse);
@@ -540,7 +554,16 @@ public class ClientDriver {
 						byte[] byteArray = read32MBfromFile(offset);
 						offset=offset+(int)Constants.BLOCK_SIZE;
 						
-						writeBlockObj.addData(ByteString.copyFrom(byteArray));
+						
+						for(int j=0;j<byteArray.length;j++)
+						{
+							writeBlockObj.addData(ByteString.copyFrom(byteArray,j,1));
+						}
+						
+						
+						
+						
+						
 						writeBlockObj.setBlockInfo(blkLocation);
 						writeBlockObj.setIsAppend(false);
 						writeBlockObj.setCount(0);
@@ -670,7 +693,13 @@ public class ClientDriver {
 					System.exit(0);
 				}
 				WriteBlockRequest.Builder writeBlockObj = WriteBlockRequest.newBuilder();
-				writeBlockObj.addData(ByteString.copyFrom(array));
+				
+				for(int j=0;j<array.length;j++)
+				{
+					writeBlockObj.addData(ByteString.copyFrom(array,j,1));
+				}
+				
+				//writeBlockObj.addData(ByteString.copyFrom(array));
 				writeBlockObj.setBlockInfo(thisBlock);
 				writeBlockObj.setIsAppend(true);
 				writeBlockObj.setCount(0);
@@ -762,7 +791,13 @@ public class ClientDriver {
 						byte[] byteArray = read32MBfromFile(offset);
 						offset=offset+(int)Constants.BLOCK_SIZE;
 						
-						writeBlockObj.addData(ByteString.copyFrom(byteArray));
+						
+						for(int j=0;j<byteArray.length;j++)
+						{
+							writeBlockObj.addData(ByteString.copyFrom(byteArray,j,1));
+						}
+						
+//						writeBlockObj.addData(ByteString.copyFrom(byteArray));
 						writeBlockObj.setBlockInfo(blkLocation);
 						writeBlockObj.setIsAppend(false);
 						writeBlockObj.setCount(0);
@@ -911,7 +946,14 @@ public class ClientDriver {
 					System.exit(0);
 				}
 				WriteBlockRequest.Builder writeBlockObj = WriteBlockRequest.newBuilder();
-				writeBlockObj.addData(ByteString.copyFrom(array));
+				
+				for(int j=0;j<array.length;j++)
+				{
+					writeBlockObj.addData(ByteString.copyFrom(array,j,1));
+				}
+				
+				
+//				writeBlockObj.addData(ByteString.copyFrom(array));
 				writeBlockObj.setBlockInfo(thisBlock);
 				writeBlockObj.setIsAppend(true);
 				writeBlockObj.setCount(0);
@@ -1158,10 +1200,20 @@ public class ClientDriver {
 						System.exit(0);
 					}
 					
-					responseArray = readBlockResObj.getData(0).toByteArray();						
-					String str = new String(responseArray, StandardCharsets.UTF_8);						
+//					responseArray = readBlockResObj.getData(0).toByteArray();	
+					
+					byte [] dataOut = new byte[readBlockResObj.getDataList().size()];
+					
+					for(int k=0;k<readBlockResObj.getDataList().size();k++)
+					{
+						readBlockResObj.getDataList().get(k).copyTo(dataOut,k);
+					}
+					
+					
+					String str = new String(dataOut);			
+					System.out.print(str);
 					//fileWriteObj.writeonly(str);
-					fileWriteObj.writeBytes(responseArray);
+					fileWriteObj.writeBytes(dataOut);
 
 				}
 				
@@ -1240,7 +1292,7 @@ public class ClientDriver {
 						e.printStackTrace();
 					}
 
-					System.out.println("No of blocks are "+no_of_blocks);
+//					System.out.println("No of blocks are "+no_of_blocks);
 					if(no_of_blocks==0)
 						no_of_blocks=1;
 					
@@ -1289,9 +1341,32 @@ public class ClientDriver {
 						/**read 32MB from file, send it as bytes, this fills in the byteArray**/
 						
 						byte[] byteArray = read32MBfromFile(offset);
-						offset=offset+(int)Constants.BLOCK_SIZE;
 						
-						writeBlockObj.addData(ByteString.copyFrom(byteArray));
+						offset=offset+(int)Constants.BLOCK_SIZE;
+						//for (int i = 0; i < bytesRead; i++) 
+						//{ wbrBuilder.addData(ByteString.copyFrom(myBuffer, i, 1)); }
+						
+						System.out.println("---------------------"+byteArray.length);
+						
+						for(int j=0;j<byteArray.length;j++)
+						{
+							writeBlockObj.addData(ByteString.copyFrom(byteArray,j,1));
+						}
+////						
+////						
+////						byte[] receivedByteArray = new byte[writeBlockObj.get]
+////						
+//						for (int j = 0; j < writeBlockRequestObj.getDataList().size(); j++) {
+//							writeBlockRequestObj.getData(j).copyTo(receivedByteArray,j);
+//							//System.out.print((char)myBuffer[j]);
+//						}
+						
+						String s = new String(byteArray);
+						System.out.println("*************The new char array is "+s);
+						System.out.println("data count"+writeBlockObj.getDataCount());
+//						writeBlockObj.addData(ByteString.copyFrom(byteArray));
+						
+						
 						writeBlockObj.setBlockInfo(blkLocation);
 						
 						dataStub.writeBlock(writeBlockObj.build().toByteArray());
@@ -1442,7 +1517,8 @@ public class ClientDriver {
 		
 		try {
 			breader.skip(offset);
-			breader.read(newCharArray, 0, bytesToBeRead);
+//			breader.read(newCharArray, 0, bytesToBeRead);
+			breader.read(newCharArray);
 			
 			
 		} catch (IOException e) {
@@ -1456,7 +1532,8 @@ public class ClientDriver {
 			e.printStackTrace();
 		}
 		
-//		System.out.println("The new char array is "+newCharArray.length);
+		 String s = new String(newCharArray);
+		System.out.println("The new char array is "+s.length());
 		return newCharArray;
 		
 	}

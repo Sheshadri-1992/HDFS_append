@@ -19,7 +19,7 @@ public final class Constants {
 	public static final String OUTPUT_FILE = "out_"; //constant by sheshadri
 	public static final String PREFIX_DIR = "File/";//constant by sheshadri
 	
-	public static final int BLOCK_SIZE=1*1000*1024;// 32 MB
+	public static final int BLOCK_SIZE=100;// 32 MB
 	public static final int DATA_NODE_PORT=10000;
 	public static final long BLOCK_REPORT_FREQ = 5000;
 	public static final long HEART_BEAT_FREQ = 5000;

@@ -94,9 +94,9 @@ public class DataNodeDriver implements IDataNode {
 				e.printStackTrace();
 			}
 			
-			readBlkResObj.addData(ByteString.copyFrom(newByteArray));
-//			for(int i=0;i<FILESIZE;i++)
-//				readBlkResObj.addData(ByteString.copyFrom(newByteArray, i, 1));
+			//readBlkResObj.addData(ByteString.copyFrom(newByteArray));
+			for(int i=0;i<FILESIZE;i++)
+				readBlkResObj.addData(ByteString.copyFrom(newByteArray, i, 1));
 			
 			
 //			System.out.println("done reading");
@@ -118,15 +118,28 @@ public class DataNodeDriver implements IDataNode {
 	public byte[] writeBlock(byte[] inp) throws RemoteException {
 		// TODO Auto-generated method stub
 //		System.out.println("In Method write Block");
-		byte[] receivedByteArray;
+//		byte[] receivedByteArray;
 		
 		WriteBlockResponse.Builder writeBlockRes = WriteBlockResponse.newBuilder();
+		byte[] receivedByteArray = null; 
 		
 		try {
 			final WriteBlockRequest writeBlockRequestObj = WriteBlockRequest.parseFrom(inp);
+			receivedByteArray = new byte[writeBlockRequestObj.getDataList().size()];
+			System.out.print("received count"+writeBlockRequestObj.getDataCount());
+			
 			/**Received Byte array **/
-			receivedByteArray = writeBlockRequestObj.getData(0).toByteArray();
+			//receivedByteArray = writeBlockRequestObj.getData(0).toByteArray();
+			
 			/**Block locations object **/
+			/** This is the needed code change **/
+			for (int j = 0; j < writeBlockRequestObj.getDataList().size(); j++) {
+				writeBlockRequestObj.getDataList().get(j).copyTo(receivedByteArray, j);
+				//System.out.print((char)myBuffer[j]);
+			}
+			
+			
+			System.out.print("wreiting length"+receivedByteArray.length);
 			final BlockLocations blockLocObj = writeBlockRequestObj.getBlockInfo();
 			
 			final String blockNumber = blockLocObj.getBlockNumber();
@@ -143,7 +156,7 @@ public class DataNodeDriver implements IDataNode {
 //					System.out.println("this just append");
 //					System.out.println(str);
 					
-					createDuplicate(blockNumber,writeBlockRequestObj.getNewBlockNum(),str);
+					createDuplicate(blockNumber,writeBlockRequestObj.getNewBlockNum(),receivedByteArray);
 					
 					int dataNodeCount = 1;
 					
@@ -238,7 +251,7 @@ public class DataNodeDriver implements IDataNode {
 		
 	}
 
-	private static void createDuplicate(String blockNumber, String newBlockNum,String data) {
+	private static void createDuplicate(String blockNumber, String newBlockNum,byte[] data) {
 		// TODO Auto-generated method stub
 		
 		File inFile = new File(getDirectoryName()+"/"+blockNumber);
@@ -254,11 +267,12 @@ public class DataNodeDriver implements IDataNode {
 		
 		
 
-		PrintWriter pw;
 		try {
-			pw = new PrintWriter(new FileWriter(outFile, true));
-		    pw.write(data);
-	        pw.close();
+						
+			FileOutputStream fo = new FileOutputStream(outFile,true);
+			fo.write(data);
+			fo.close();
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -303,7 +317,14 @@ public class DataNodeDriver implements IDataNode {
 			
 			WriteBlockRequest.Builder req = WriteBlockRequest.newBuilder();
 			req.setNewBlockNum(writeBlockRequestObj.getNewBlockNum());
-			req.addData(writeBlockRequestObj.getData(0));
+			
+			/** after new update **/
+			for (int j = 0; j < writeBlockRequestObj.getDataList().size(); j++) {
+				req.addData(writeBlockRequestObj.getDataList().get(j));
+				//System.out.print((char)myBuffer[j]);
+			}
+			
+//			req.addData(writeBlockRequestObj.getData(0));
 			req.setBlockInfo(blkLocations);
 			req.setIsAppend(true);
 			req.setCount(writeBlockRequestObj.getCount()+1);
@@ -368,7 +389,18 @@ public class DataNodeDriver implements IDataNode {
 			
 			WriteBlockRequest.Builder req = WriteBlockRequest.newBuilder();
 			
-			req.addData(writeBlockRequestObj.getData(0));
+			
+			
+			
+			for(int j=0;j<writeBlockRequestObj.getDataCount();j++)
+			{
+				req.addData(writeBlockRequestObj.getData(j));	
+			}
+			
+			
+			
+			
+			
 			req.setBlockInfo(blkLocations);
 			req.setIsAppend(writeBlockRequestObj.getIsAppend());
 			req.setNewBlockNum(writeBlockRequestObj.getNewBlockNum());
