@@ -2,15 +2,10 @@ package com.hdfs.namenode;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-//import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-//import java.net.InetAddress;
-//import java.net.UnknownHostException;
-
 import java.rmi.AlreadyBoundException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -27,9 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Vector;
-import java.util.logging.FileHandler;
-
-import javax.swing.plaf.SliderUI;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.hdfs.datanode.FileReaderClass;
@@ -52,7 +45,6 @@ import com.hdfs.miscl.Hdfs.ListFilesRequest;
 import com.hdfs.miscl.Hdfs.ListFilesResponse;
 import com.hdfs.miscl.Hdfs.OpenFileRequest;
 import com.hdfs.miscl.Hdfs.OpenFileResponse;
-import com.hdfs.miscl.Hdfs.ReadBlockResponse;
 import com.hdfs.miscl.Hdfs.ReadBlockSizeRequest;
 import com.hdfs.miscl.Hdfs.ReadBlockSizeResponse;
 
@@ -60,7 +52,7 @@ public class NameNodeDriver implements INameNode
 {
 
 	public static HashMap<Integer,DataNodeLocation>  dataNodes;   //data node id, location
-	public static HashMap<String,List<DataNodeLocation>> blockLocations;
+	public static ConcurrentHashMap<String, List<DataNodeLocation>> blockLocations;
 	public static HashMap<Integer,Long>  heartBeatDataNodes; 
 	public static HashMap<String,Integer> allBlocksHashMap;//all blocks that are stored in the HDFS right now
 	public static HashMap<String,Integer> activeBlocksHashMap;//all blocks that are either being written or being appended
@@ -105,7 +97,7 @@ public class NameNodeDriver implements INameNode
         }
 		
 		dataNodes = new HashMap<>();
-		blockLocations = new HashMap<>();
+		blockLocations = new ConcurrentHashMap<String,List<DataNodeLocation>>();
 		heartBeatDataNodes = new HashMap<>();
 		activeBlocksHashMap = new HashMap<>();
 		handleBlockHashMap = new HashMap<>();
@@ -179,9 +171,9 @@ public class NameNodeDriver implements INameNode
 			 */
 			if(decision==1)//commit
 			{
-				System.out.println("its a commit");
+//				System.out.println("its a commit");
 				Vector<String> myBlocks = handleBlockHashMap.get(handle);
-				System.out.println("Size if handle" + myBlocks.size());
+//				System.out.println("Size if handle" + myBlocks.size());
 				
 				String oldBlock = myBlocks.get(0);
 				String newBlock = myBlocks.get(1);
@@ -204,11 +196,12 @@ public class NameNodeDriver implements INameNode
 				
 				
 				/**remove the entry from the block handle hashmap **/
+				System.out.println("KOD : handleBlockHashMap "+handleBlockHashMap);
 				addBlocksToallBlocksHashMap(handleBlockHashMap.get(handle));
 				removeBlocksFromActiveBlocksHashMap(handleBlockHashMap.get(handle)); // handle block contains append blocks with it
 				
 				
-				System.out.println("does activeblock hashmap contain newBlock? "+(activeBlocksHashMap.containsKey(newBlock)));
+//				System.out.println("does activeblock hashmap contain newBlock? "+(activeBlocksHashMap.containsKey(newBlock)));
 
 				/**remove the file handle from the handleHashMap **/
 				handleBlockHashMap.remove(handle);
@@ -221,9 +214,9 @@ public class NameNodeDriver implements INameNode
 			}
 			else if(decision==0)//abort, so remove the entry from the active block hashmap
 			{
-				System.out.println("its an abort");
+//				System.out.println("its an abort");
 
-				Vector<String> myBlocks = handleBlockHashMap.get(handle);				
+//				Vector<String> myBlocks = handleBlockHashMap.get(handle);				
 								
 				/**remove the entry from the block handle hashmap **/
 				removeBlocksFromActiveBlocksHashMap(handleBlockHashMap.get(handle));// handle block contains append blocks with it
@@ -273,7 +266,7 @@ public class NameNodeDriver implements INameNode
 	@Override
 	public byte[] getBlockLocations(byte[] inp) throws RemoteException {
 		// TODO Auto-generated method stub
-		System.out.println("Block location called");
+//		System.out.println("Block location called");
 		
 		BlockLocationResponse.Builder res = BlockLocationResponse.newBuilder();
 		res.setStatus(Constants.STATUS_FAILED);
@@ -283,7 +276,7 @@ public class NameNodeDriver implements INameNode
 			
 			List<String> blocks = req.getBlockNumsList();
 			
-			System.out.println("Requested blocks "+blocks);
+//			System.out.println("Requested blocks "+blocks);
 			
 			
 			List<BlockLocations> locs  = getFile.getBlockLocations(blocks,blockLocations);
@@ -305,7 +298,7 @@ public class NameNodeDriver implements INameNode
 	public byte[] assignBlock(byte[] inp) throws RemoteException {
 		// TODO Auto-generated method stub
 		
-		System.out.println("Assign block called");
+//		System.out.println("Assign block called");
 		AssignBlockResponse.Builder res = AssignBlockResponse.newBuilder();
 		res.setStatus(Constants.STATUS_FAILED);
 		
@@ -330,7 +323,7 @@ public class NameNodeDriver implements INameNode
 			
 			int max = dataNodes.values().size();
 			
-			System.out.println("Data nodes size "+max);
+//			System.out.println("Data nodes size "+max);
 			
 			if(max==1)
 			{
@@ -360,13 +353,14 @@ public class NameNodeDriver implements INameNode
 			if(req.getIsAppend()==true)
 			{				
 				handleBlockHashMap.get(handle).add(numBlock+".1");
-				System.out.println("the size of the handleblock hash map is "+handleBlockHashMap.size());
+//				System.out.println("the size of the handleblock hash map is "+handleBlockHashMap.size());
 			}
 			blocks.setBlockNumber(numBlock+".1");//initial version number is 1, therefore 12.1
 			res.setNewBlock(blocks);
 			
-			System.out.println("Response" + res);
+//			System.out.println("Response" + res);
 			
+			blockLocations.put(numBlock+".1",blocks.getLocationsList());
 			return res.build().toByteArray();
 			
 			
@@ -422,7 +416,6 @@ public class NameNodeDriver implements INameNode
 
 
 
-	@SuppressWarnings("null")
 	@Override
 	public byte[] blockReport(byte[] inp) throws RemoteException {
 		// TODO Auto-generated method stub
@@ -441,39 +434,39 @@ public class NameNodeDriver implements INameNode
 			
 			dataNodes.put(id,loc);
 			
-			for(int i=0;i<req.getBlockNumbersCount();i++)
-			{
-				String numBlock = req.getBlockNumbers(i);
-				if(!blockLocations.containsKey(numBlock))//if it doesn't contain key then addd, key and datalocations as the value
-				{
-					
-					List<DataNodeLocation> arrLoc = new ArrayList<DataNodeLocation>();
-					arrLoc.add(loc);
-					System.out.println("Added block "+numBlock);
-					
-					blockLocations.put(numBlock, arrLoc);
-					
-				}else //if the size isn't 2(or whatever the replication factor) yet, then append the datanode location to the value
-				{
-					List<DataNodeLocation> tmpLoc = blockLocations.get(numBlock);
-					
-					boolean flag=true;
-					for(DataNodeLocation location:tmpLoc)
-					{
-						if(location.equals(loc))
-						{
-							flag=false;
-							break;
-						}
-					}
-					
-					if(flag)
-					{
-						tmpLoc.add(loc);
-					}
-				}
-				
-			}
+//			for(int i=0;i<req.getBlockNumbersCount();i++)
+//			{
+//				String numBlock = req.getBlockNumbers(i);
+//				if(!blockLocations.containsKey(numBlock))//if it doesn't contain key then addd, key and datalocations as the value
+//				{
+//					
+//					List<DataNodeLocation> arrLoc = new ArrayList<DataNodeLocation>();
+//					arrLoc.add(loc);
+////					System.out.println("Added block "+numBlock);
+//					
+//					blockLocations.put(numBlock, arrLoc);
+//					
+//				}else //if the size isn't 2(or whatever the replication factor) yet, then append the datanode location to the value
+//				{
+//					List<DataNodeLocation> tmpLoc = blockLocations.get(numBlock);
+//					
+//					boolean flag=true;
+//					for(DataNodeLocation location:tmpLoc)
+//					{
+//						if(location.equals(loc))
+//						{
+//							flag=false;
+//							break;
+//						}
+//					}
+//					
+//					if(flag)
+//					{
+//						tmpLoc.add(loc);
+//					}
+//				}
+//				
+//			}
 			
 			
 			/** now need to use hashmap to  this to send delete blocks **/
@@ -501,7 +494,7 @@ public class NameNodeDriver implements INameNode
 						{
 							
 							deleteBlocks.add(numBlock);	
-							blockLocations.remove(numBlock);
+//							blockLocations.remove(numBlock); /* testing kiss of death */
 							
 						}
 						else // need to send the location of the highest version copy block
@@ -528,6 +521,7 @@ public class NameNodeDriver implements INameNode
 			
 //			System.out.println("delete blocks list is "+deleteBlocks.toString());
 			
+			deleteBlocks.clear();
 			res.addAllDeleteBlocks(deleteBlocks);
 			res.addAllBlockInfo(compareAndAdd);
 			deleteBlocks.clear();			
@@ -545,9 +539,11 @@ public class NameNodeDriver implements INameNode
 
 	/**
 	 * to check whether to send delete block is sent or copy block is sent
+	 * true : higher version present, delete
+	 * false : lower version present, don't delete, replicate
 	 * @return
 	 */
-	boolean checkHigherBlock(String bNumber,DataNodeLocation loc)
+	 boolean  checkHigherBlock(String bNumber,DataNodeLocation loc)
 	{
 		
 		Integer highestVersion = allBlocksHashMap.get(bNumber);
@@ -557,12 +553,13 @@ public class NameNodeDriver implements INameNode
 		for (Iterator<DataNodeLocation> iterator = dataNodeLocations.iterator();iterator.hasNext();)
 		{
 			DataNodeLocation dataNodeLocation = (DataNodeLocation) iterator.next();
-			System.out.print(dataNodeLocation);
+//			System.out.print(dataNodeLocation);
 			
 			if(dataNodeLocation.equals(loc))
 				return true;
 			
 		}
+	
 	
 		return false;
 	}
@@ -722,7 +719,7 @@ public class NameNodeDriver implements INameNode
 	@Override
 	public byte[] openFile(byte[] inp) throws RemoteException {
 		// TODO Auto-generated method stub
-		System.out.println("Open file new called");
+//		System.out.println("Open file new called");
 		OpenFileResponse.Builder res = OpenFileResponse.newBuilder();
 		res.setStatus(Constants.STATUS_FAILED);
 		
@@ -794,7 +791,7 @@ public class NameNodeDriver implements INameNode
 		 * 2. Increment the clock, save it in the memory and in persistent storage
 		 * 3. send the client the new clock number 
 		 */
-		System.out.println("Append file method called ");
+		
 		OpenFileResponse.Builder res = OpenFileResponse.newBuilder();
 		res.setStatus(Constants.STATUS_FAILED);
 		
@@ -852,8 +849,8 @@ public class NameNodeDriver implements INameNode
 			    
 			    
 			    /**Find the size of the file **/
-			    System.out.println("The old block is "+oldBlock);
-			    long sizeOfLastBlock = findFileSize(oldBlock);
+//			    System.out.println("The old block is "+oldBlock);
+			    long sizeOfLastBlock = findBlockSize(oldBlock);
 			    
 			    
 			    /** set the response**/
@@ -874,6 +871,7 @@ public class NameNodeDriver implements INameNode
 			    /**new block **/
 			    res.setNewBlockNum(newBlock);
 			    
+			    blockLocations.put(newBlock, blockLocations.get(oldBlock));
 			    
 			}
 			
@@ -915,11 +913,13 @@ public class NameNodeDriver implements INameNode
 	 * This method returns the size of the file	  
 	 */
 	
-	public long findFileSize(String filename) 
+	public synchronized long findBlockSize(String blockNum) 
 	{
 		/**find the locations of the datanodes for the given block/filename**/
 //		filename = Constants.PREFIX_DIR+filename;
-		List<DataNodeLocation> myLocations = blockLocations.get(filename);
+		System.out.println("Block Locations with me : "+blockLocations);
+		System.out.println("Searching block : "+blockNum);
+		List<DataNodeLocation> myLocations = blockLocations.get(blockNum);
 		IDataNode dataStub=null;
 		
 		int dataNodeCounter=0;
@@ -967,7 +967,7 @@ public class NameNodeDriver implements INameNode
 		{
 //			dataStub.call shweta's method
 			ReadBlockSizeRequest.Builder fileBlockReq = ReadBlockSizeRequest.newBuilder();
-			fileBlockReq.setBlockNumber(filename);
+			fileBlockReq.setBlockNumber(blockNum);
 			
 			try {
 				byte[] responseArray = dataStub.readBlockSize(fileBlockReq.build().toByteArray());
@@ -1039,7 +1039,7 @@ public class NameNodeDriver implements INameNode
 	/**updates the last block of files on commit **/
 	public void updateOnCommit(Vector<String> blocks, String fileName)//newclock is 12.9 changes to 12.9.9
 	{
-		System.out.println(fileName);
+//		System.out.println(fileName);
 		FileReaderClass myFileReader = new FileReaderClass(fileName);
 		myFileReader.openFile();
 		
@@ -1095,11 +1095,12 @@ public class NameNodeDriver implements INameNode
 	 */
 	public static void removeBlocksFromActiveBlocksHashMap(Vector<String> blocks)
 	{
-		for(int i=1;i<blocks.size();i++)// from i =1 since 1 = 0 rep
+		if(blocks.size()>=1)
 		{
-			System.out.println("removeBlocksActv "+blocks.get(i));
-//			String[] myArray = blocks.ge
-			activeBlocksHashMap.remove(blocks.get(i).split("\\.",0)[0]); // similar to myArray[0]
+			for(int i=1;i<blocks.size();i++)// from i =1 since 1 = 0 rep
+			{
+				activeBlocksHashMap.remove(blocks.get(i).split("\\.",0)[0]); // similar to myArray[0]
+			}
 		}
 	}
 }

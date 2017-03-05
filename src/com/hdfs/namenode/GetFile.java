@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.hdfs.miscl.Constants;
 import com.hdfs.miscl.Hdfs.BlockLocations;
@@ -81,7 +82,7 @@ public class GetFile {
 		
 	}
 
-	public List<BlockLocations> getBlockLocations(List<String> blocks, HashMap<String, List<DataNodeLocation>> blockLocations) {
+	public List<BlockLocations> getBlockLocations(List<String> blocks, ConcurrentHashMap<String, List<DataNodeLocation>> blockLocations) {
 		// TODO Auto-generated method stub
 		
 		List<BlockLocations> resLocations = new ArrayList<>();

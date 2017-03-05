@@ -126,7 +126,7 @@ public class DataNodeDriver implements IDataNode {
 		try {
 			final WriteBlockRequest writeBlockRequestObj = WriteBlockRequest.parseFrom(inp);
 			receivedByteArray = new byte[writeBlockRequestObj.getDataList().size()];
-			System.out.print("received count"+writeBlockRequestObj.getDataCount());
+//			System.out.print("received count"+writeBlockRequestObj.getDataCount());
 			
 			/**Received Byte array **/
 			//receivedByteArray = writeBlockRequestObj.getData(0).toByteArray();
@@ -139,7 +139,7 @@ public class DataNodeDriver implements IDataNode {
 			}
 			
 			
-			System.out.print("wreiting length"+receivedByteArray.length);
+//			System.out.print("wreiting length"+receivedByteArray.length);
 			final BlockLocations blockLocObj = writeBlockRequestObj.getBlockInfo();
 			
 			final String blockNumber = blockLocObj.getBlockNumber();
@@ -310,7 +310,7 @@ public class DataNodeDriver implements IDataNode {
 
 		try {
 			Registry registry=LocateRegistry.getRegistry(dataNode.getIp(),dataNode.getPort());
-			System.out.println("SEndign to "+dataNode.getPort());
+//			System.out.println("SEndign to "+dataNode.getPort());
 
 			IDataNode dataStub;
 			dataStub = (IDataNode) registry.lookup(Constants.DATA_NODE_ID);
@@ -363,7 +363,7 @@ public class DataNodeDriver implements IDataNode {
 		BlockLocations.Builder blkLocations = BlockLocations.newBuilder();
 		blkLocations.setBlockNumber(blockNumber);
 		
-		System.out.println(locs);
+//		System.out.println(locs);
 		
 		//0 will be the current data node
 		

@@ -153,7 +153,7 @@ public class PutFile {
 		{
 			String block= fileBlocks.get(handle).get(i);
 			String[] blockWithVersion = block.split("\\.",0);
-			System.out.println(blockWithVersion[0]+" all blocks format changed while we put");
+//			System.out.println(blockWithVersion[0]+" all blocks format changed while we put");
 			myHashMap.put(blockWithVersion[0] ,Integer.valueOf(blockWithVersion[1]));//this would add a block like 12.1 
 			sb.append(block.toString());
 			if(i!=fileBlocks.get(handle).size()-1)
@@ -183,7 +183,7 @@ public class PutFile {
 		{
 			String block= fileBlocks.get(handle).get(i);
 			String[] blockWithVersion = block.split("\\.",0);
-			System.out.println(blockWithVersion[0]+" changed");
+//			System.out.println(blockWithVersion[0]+" changed");
 			myHashMap.remove(blockWithVersion[0]);//this would add a block like 12.1	
 			
 		}
