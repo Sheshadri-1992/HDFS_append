@@ -21,7 +21,7 @@ public final class Constants {
 	
 	public static final int BLOCK_SIZE=500;// 32 MB
 	public static final int DATA_NODE_PORT=10000;
-	public static final long BLOCK_REPORT_FREQ = 5000;
+	public static final long BLOCK_REPORT_FREQ = 1000*60;
 	public static final long HEART_BEAT_FREQ = 5000;
 
 //	public static final String CONNECTIVITY = "eth0"; //eth0 if you use a cable

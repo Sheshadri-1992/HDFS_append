@@ -348,6 +348,7 @@ public class DataNodeDriver implements IDataNode {
 		}
 		catch(Exception e)
 		{
+			e.printStackTrace();
 			System.out.println("Generic exception in Datanode driver class, sendtoNextnode method");
 		}
 		

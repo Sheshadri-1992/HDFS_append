@@ -489,15 +489,15 @@ public class NameNodeDriver implements INameNode
 						/**need to check first whether the higher version of 
 						 * the block is already present with me, in case then delete the block
 						 */
-						boolean isPresentHigher = checkHigherBlock(blockNumber,loc);
-						if(isPresentHigher==true)// means higher version is present and so delete lower version
+						int isPresentHigher = checkHigherBlock(blockNumber,version.toString(),loc);
+						if(isPresentHigher==0)// means higher version is present and so delete lower version
 						{
 							
 							deleteBlocks.add(numBlock);	
 //							blockLocations.remove(numBlock); /* testing kiss of death */
 							
 						}
-						else // need to send the location of the highest version copy block
+						else  if(isPresentHigher==1)// need to send the location of the highest version copy block
 						{
 							String highestVBlock = blockNumber+".";
 							highestVBlock += allBlocksHashMap.get(blockNumber); //will be 12.2
@@ -511,9 +511,12 @@ public class NameNodeDriver implements INameNode
 								myBlockLocations.setBlockNumber(highestVBlock);//case where nodes which contain the latest- blocks aren't up
 								myBlockLocations.addAllLocations(dNodeLocations); // added all
 								compareAndAdd.add(myBlockLocations.build());
-							}
+							}							
 							
-							
+						}
+						else
+						{
+							System.out.println("Highest version block, ignore it");
 						}
 					}
 				}
@@ -521,7 +524,7 @@ public class NameNodeDriver implements INameNode
 			
 //			System.out.println("delete blocks list is "+deleteBlocks.toString());
 			
-			deleteBlocks.clear();
+//			deleteBlocks.clear();
 			res.addAllDeleteBlocks(deleteBlocks);
 			res.addAllBlockInfo(compareAndAdd);
 			deleteBlocks.clear();			
@@ -539,29 +542,36 @@ public class NameNodeDriver implements INameNode
 
 	/**
 	 * to check whether to send delete block is sent or copy block is sent
-	 * true : higher version present, delete
-	 * false : lower version present, don't delete, replicate
+	 * 0 : higher version present, delete
+	 * 1 : lower version present, don't delete, replicate
+	 * 2 : this is already a highest version, don't do anything ignore
 	 * @return
 	 */
-	 boolean  checkHigherBlock(String bNumber,DataNodeLocation loc)
+	 int  checkHigherBlock(String bNumber,String version,DataNodeLocation loc)
 	{
 		
 		Integer highestVersion = allBlocksHashMap.get(bNumber);
 		
-		List<DataNodeLocation> dataNodeLocations = blockLocations.get(bNumber+"."+highestVersion);
+		if(highestVersion.toString().equals(version))
+			return 2; // ignore case
 		
-		for (Iterator<DataNodeLocation> iterator = dataNodeLocations.iterator();iterator.hasNext();)
+		
+		//checks if the highest version of the block is already present in the data location that reported the current block
+		List<DataNodeLocation> dataNodeLocations = blockLocations.get(bNumber+"."+highestVersion);
+		if(dataNodeLocations!=null)
 		{
-			DataNodeLocation dataNodeLocation = (DataNodeLocation) iterator.next();
-//			System.out.print(dataNodeLocation);
-			
-			if(dataNodeLocation.equals(loc))
-				return true;
-			
+			for (Iterator<DataNodeLocation> iterator = dataNodeLocations.iterator();iterator.hasNext();)
+			{
+				DataNodeLocation dataNodeLocation = (DataNodeLocation) iterator.next();
+					
+				if(dataNodeLocation.equals(loc))
+					return 0; // contains higher version so delete
+				
+			}
 		}
 	
 	
-		return false;
+		return 1;//replicate the block
 	}
 
 	@Override

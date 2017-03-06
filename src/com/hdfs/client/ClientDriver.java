@@ -1362,7 +1362,7 @@ public class ClientDriver {
 //						}
 						
 						String s = new String(byteArray);
-						System.out.println("*************The new char array is "+s);
+//						System.out.println("*************The new char array is "+s);
 						System.out.println("data count"+writeBlockObj.getDataCount());
 //						writeBlockObj.addData(ByteString.copyFrom(byteArray));
 						
