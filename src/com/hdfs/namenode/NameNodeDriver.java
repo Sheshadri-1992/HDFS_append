@@ -433,40 +433,40 @@ public class NameNodeDriver implements INameNode
 			
 			
 			dataNodes.put(id,loc);
-			
-//			for(int i=0;i<req.getBlockNumbersCount();i++)
-//			{
-//				String numBlock = req.getBlockNumbers(i);
-//				if(!blockLocations.containsKey(numBlock))//if it doesn't contain key then addd, key and datalocations as the value
-//				{
-//					
-//					List<DataNodeLocation> arrLoc = new ArrayList<DataNodeLocation>();
-//					arrLoc.add(loc);
-////					System.out.println("Added block "+numBlock);
-//					
-//					blockLocations.put(numBlock, arrLoc);
-//					
-//				}else //if the size isn't 2(or whatever the replication factor) yet, then append the datanode location to the value
-//				{
-//					List<DataNodeLocation> tmpLoc = blockLocations.get(numBlock);
-//					
-//					boolean flag=true;
-//					for(DataNodeLocation location:tmpLoc)
-//					{
-//						if(location.equals(loc))
-//						{
-//							flag=false;
-//							break;
-//						}
-//					}
-//					
-//					if(flag)
-//					{
-//						tmpLoc.add(loc);
-//					}
-//				}
-//				
-//			}
+			/* when datanodes have blocks they report it. It gets added here */
+			for(int i=0;i<req.getBlockNumbersCount();i++)
+			{
+				String numBlock = req.getBlockNumbers(i);
+				if(!blockLocations.containsKey(numBlock))//if it doesn't contain key then addd, key and datalocations as the value
+				{
+					
+					List<DataNodeLocation> arrLoc = new ArrayList<DataNodeLocation>();
+					arrLoc.add(loc);
+//					System.out.println("Added block "+numBlock);
+					
+					blockLocations.put(numBlock, arrLoc);
+					
+				}else //if the size isn't 2(or whatever the replication factor) yet, then append the datanode location to the value
+				{
+					List<DataNodeLocation> tmpLoc = blockLocations.get(numBlock);
+					
+					boolean flag=true;
+					for(DataNodeLocation location:tmpLoc)
+					{
+						if(location.equals(loc))
+						{
+							flag=false;
+							break;
+						}
+					}
+					
+					if(flag)
+					{
+						tmpLoc.add(loc);
+					}
+				}
+				
+			}
 			
 			
 			/** now need to use hashmap to  this to send delete blocks **/
@@ -489,7 +489,11 @@ public class NameNodeDriver implements INameNode
 						/**need to check first whether the higher version of 
 						 * the block is already present with me, in case then delete the block
 						 */
-						int isPresentHigher = checkHigherBlock(blockNumber,version.toString(),loc);
+//						int isPresentHigher = checkHigherBlock(blockNumber,version.toString(),loc);
+						int isPresentHigher = checkHigherBlock(blockNumber,version.toString(),req.getBlockNumbersList());
+						
+//						System.out.println("Block number is "+ blockNumber+ " current version "+version+ " Highest version "+ allBlocksHashMap.get(blockNumber) + " isPresentHigher "+isPresentHigher);
+						
 						if(isPresentHigher==0)// means higher version is present and so delete lower version
 						{
 							
@@ -499,6 +503,8 @@ public class NameNodeDriver implements INameNode
 						}
 						else  if(isPresentHigher==1)// need to send the location of the highest version copy block
 						{
+							System.out.println("Replication case");
+							
 							String highestVBlock = blockNumber+".";
 							highestVBlock += allBlocksHashMap.get(blockNumber); //will be 12.2
 							
@@ -510,7 +516,9 @@ public class NameNodeDriver implements INameNode
 							{
 								myBlockLocations.setBlockNumber(highestVBlock);//case where nodes which contain the latest- blocks aren't up
 								myBlockLocations.addAllLocations(dNodeLocations); // added all
-								compareAndAdd.add(myBlockLocations.build());
+								
+								if(!compareAndAdd.contains(myBlockLocations.build()))
+									compareAndAdd.add(myBlockLocations.build());
 							}							
 							
 						}
@@ -573,6 +581,26 @@ public class NameNodeDriver implements INameNode
 	
 		return 1;//replicate the block
 	}
+	 
+	 int  checkHigherBlock(String bNumber,String version,List<String> blockNums)
+		{
+			
+			Integer highestVersion = allBlocksHashMap.get(bNumber);
+			
+			if(highestVersion.toString().equals(version))
+				return 2; // ignore case
+			
+			
+			//checks if the highest version of the block is already present in the data location that reported the current block
+			
+			if(blockNums.contains(bNumber+"."+highestVersion))
+			{
+				return 0;
+			}
+		
+		
+			return 1;//replicate the block
+		} 
 
 	@Override
 	public byte[] heartBeat(byte[] inp) throws RemoteException {

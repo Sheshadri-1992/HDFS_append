@@ -632,16 +632,16 @@ public class DataNodeDriver implements IDataNode {
 				return;
 			}
 			
-			responseArray = readBlockResObj.getData(0).toByteArray();						
-			String str = new String(responseArray, StandardCharsets.UTF_8);		
+			
+			byte[] receivedByteArray = new byte[readBlockResObj.getDataList().size()];
+			for (int j = 0; j < readBlockResObj.getDataList().size(); j++) {
+				readBlockResObj.getDataList().get(j).copyTo(receivedByteArray, j);
+			}
+	
+			String str = new String(receivedByteArray, StandardCharsets.UTF_8);		
 			FileWriterClass fileWriteObj = new FileWriterClass(getDirectoryName()+"/"+blockNumber);
 			fileWriteObj.createFile();
-			//fileWriteObj.writeonly(str); 
-			/**
-			 *  @Shweta
-			 *  writing to file in bytes
-			 */
-			fileWriteObj.writeBytes(responseArray);
+			fileWriteObj.writeBytes(receivedByteArray);
 			fileWriteObj.closeFile();
 			/*update local list of blocks */
 			insertBlockInDir(blockNumber);
